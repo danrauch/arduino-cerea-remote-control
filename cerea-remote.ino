@@ -191,8 +191,8 @@ void loop(void)
     // empty string and read from serial port
     cmd = "";
     read_serial();
-    if (cmd.startsWith("@CEREA;")) {    // Wenn Cerea entdeckt wird mit ausführung starten
-        cerea();
+    if (cmd.startsWith("@CEREA;")) {
+        evaluate_cerea_string();
     }
 
     TSPoint lcd_point;
@@ -296,8 +296,7 @@ void loop(void)
             Serial.println(command_string);
 
             // reset non-toggle buttons
-            commands[3] = 0;
-            commands[4] = 0;
+            commands[3] = 0;            
             commands[6] = 0;
             commands[7] = 0;
         }
@@ -313,7 +312,7 @@ void loop(void)
     digitalWrite(VP, LOW);
 }
 
-// read from serial interface until EOL
+// read from serial interface until EOL (ASCII 10)
 void read_serial()
 {
     do {
@@ -326,12 +325,9 @@ void read_serial()
     } while (next_char != 10);
 }
 
-void cerea()
+void evaluate_cerea_string()
 {
-
-    // ### String mit Teilbreiten extrahieren ###
-
-    // @Cerea; entferenen
+    // remove @Cerea;
     cmd.remove(0, 7);
 
     //GPS Geschwindigkeit auslesen
@@ -359,36 +355,22 @@ void cerea()
 
     //Geschwindigkeitsabfrage
 
-    if (gpsspeed >= 2.5)
-    {
+    if (gpsspeed >= 2.5) {
         // Schleife über alle gefundenen Teilbreiten
-        for (int i = 0; i < anzahl_teilbreiten * 2; i = i + 2)
-        {
-            if (teilbreite.substring(i, i + 1) == "1")
-            {
+        for (int i = 0; i < anzahl_teilbreiten * 2; i = i + 2) {
+            if (teilbreite.substring(i, i + 1) == "1") {
                 // Teilbreite einschalten
                 motor[i / 2].write(WINKEL_TEILBREITE_EIN);
             }
-            if (teilbreite.substring(i, i + 1) == "0")
-            {
+            if (teilbreite.substring(i, i + 1) == "0") {
                 // Teilbreite ausschalten
                 motor[i / 2].write(WINKEL_TEILBREITE_AUS);
             }
         }
-    }
-    else
-    {
-        for (int i = 0; i < anzahl_teilbreiten * 2; i = i + 2)
-        {
+    } else {
+        for (int i = 0; i < anzahl_teilbreiten * 2; i = i + 2) {
             // Teilbreite ausschalten
             motor[i / 2].write(WINKEL_TEILBREITE_AUS);
         }
     }
-
-    /*
-  // Nur nötig falls mehr als 5 Teilbreiten vorhanden (dann auch mehr Servos nötig)
-  for (i = anzahl_teilbreiten + 1 ; i < 8; i++) { // restlichen teilbreiten aus
-    digitalWrite(i + 1, HIGH);
-  }
-  */
 }
