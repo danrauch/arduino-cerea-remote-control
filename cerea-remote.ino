@@ -49,6 +49,10 @@
 // Vibration pin
 #define VP 13 // change according to pin connected to motor (default: 13 to activate LED)
 
+// relay pins
+#define RELAY_PIN_1 53
+#define RELAY_PIN_2 49
+
 // Assign human-readable names to some common 16-bit color values:
 #define BLACK 0x0000
 #define BLUE 0x001F
@@ -129,11 +133,27 @@ uint16_t buttoncolors[8] = {NAVY, NAVY, ORANGE, ORANGE, RED, MAGENTA, BLUE, GREE
 uint8_t commands[11] = {0};
 char command_string[33] = {0};
 
+// CEREA input vars
+String cmd;
+char next_char;
+float gpsspeed;
+
 void setup(void)
 {
     Serial.begin(9600);
-    Serial.println(F("TFT LCD test"));
 
+    init_remote_control();
+
+    // init relay pins
+    pinMode(RELAY_PIN_1, OUTPUT);
+    pinMode(RELAY_PIN_2, OUTPUT);
+    digitalWrite(RELAY_PIN_1, LOW);
+    digitalWrite(RELAY_PIN_2, LOW);
+}
+
+void init_remote_control()
+{
+    Serial.println(F("TFT LCD test"));
     tft.reset();
 
     // additional LCDs can be added here
@@ -168,6 +188,12 @@ void setup(void)
 
 void loop(void)
 {
+    // empty string and read from serial port
+    cmd = "";
+    read_serial();
+    if (cmd.startsWith("@CEREA;")) {    // Wenn Cerea entdeckt wird mit ausführung starten
+        cerea();
+    }
 
     TSPoint lcd_point;
     lcd_point.x = 0;
@@ -212,25 +238,31 @@ void loop(void)
                 case 2: commands[6] = 1; break; // left
                 case 3: commands[7] = 1; break; // right
                 case 4:
-                    if (commands[2] == 0) { // ON
-                        // resevered for later use
+                    if (commands[2] == 0) { // relay automatic active
+                        
                         commands[2] = 1;
                         buttons[b].drawButton(true);
                     } else {
-                        // resevered for later use
+                        
                         commands[2] = 0;
                         buttons[b].drawButton();
                     }
                     break;
                 case 5:
-                    if (commands[1] == 0) { // Off
-                        // resevered for later use
+                    if (commands[1] == 0) { // manual relay control                        
                         commands[1] = 1;
-                        buttons[b].drawButton(true);
-                    } else {
-                        // resevered for later use
+                        buttons[b].drawButton(true);                        
+                        commands[0] = 1;  // enable marc with relay
+                        buttons[6].drawButton(true);
+                        digitalWrite(RELAY_PIN_1, HIGH);
+                        digitalWrite(RELAY_PIN_2, HIGH);
+                    } else {                        
                         commands[1] = 0;
                         buttons[b].drawButton();
+                        commands[0] = 0;  // disable marc with relay
+                        buttons[6].drawButton();
+                        digitalWrite(RELAY_PIN_1, LOW);
+                        digitalWrite(RELAY_PIN_2, LOW);
                     }
                     break;
                 case 6:
@@ -279,4 +311,84 @@ void loop(void)
     delay(40); // UI debouncing
 
     digitalWrite(VP, LOW);
+}
+
+// read from serial interface until EOL
+void read_serial()
+{
+    do {
+        if (Serial.available() > 0) {
+            next_char = Serial.read();
+            if (next_char >= 32) {
+                cmd += next_char;
+            }
+        }
+    } while (next_char != 10);
+}
+
+void cerea()
+{
+
+    // ### String mit Teilbreiten extrahieren ###
+
+    // @Cerea; entferenen
+    cmd.remove(0, 7);
+
+    //GPS Geschwindigkeit auslesen
+    gpsspeed = cmd.toFloat();
+
+    // Nach erstem ; suchen
+    int first_semicolon = cmd.indexOf(';');
+
+    // Nach zweiten ; suchen
+    int second_semicolon = cmd.indexOf(';', first_semicolon + 1);
+
+    // Geschwindigkeit und -1 entfernen
+    cmd.remove(0, second_semicolon + 1);
+
+    // Suche nach "END" (signalisiert Kommandoende)
+    int command_end = cmd.indexOf('END');
+
+    // Anzahl teilbreiten ermitteln
+    int anzahl_teilbreiten = (command_end - 2) / 2;
+
+    // Teilbreiten in einen neuen String
+    String teilbreite = cmd.substring(0, command_end - 3);
+
+    // ### Servos anhand von extrahierten String steuern ###
+
+    //Geschwindigkeitsabfrage
+
+    if (gpsspeed >= 2.5)
+    {
+        // Schleife über alle gefundenen Teilbreiten
+        for (int i = 0; i < anzahl_teilbreiten * 2; i = i + 2)
+        {
+            if (teilbreite.substring(i, i + 1) == "1")
+            {
+                // Teilbreite einschalten
+                motor[i / 2].write(WINKEL_TEILBREITE_EIN);
+            }
+            if (teilbreite.substring(i, i + 1) == "0")
+            {
+                // Teilbreite ausschalten
+                motor[i / 2].write(WINKEL_TEILBREITE_AUS);
+            }
+        }
+    }
+    else
+    {
+        for (int i = 0; i < anzahl_teilbreiten * 2; i = i + 2)
+        {
+            // Teilbreite ausschalten
+            motor[i / 2].write(WINKEL_TEILBREITE_AUS);
+        }
+    }
+
+    /*
+  // Nur nötig falls mehr als 5 Teilbreiten vorhanden (dann auch mehr Servos nötig)
+  for (i = anzahl_teilbreiten + 1 ; i < 8; i++) { // restlichen teilbreiten aus
+    digitalWrite(i + 1, HIGH);
+  }
+  */
 }
