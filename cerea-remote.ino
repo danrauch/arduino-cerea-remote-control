@@ -47,7 +47,7 @@
 #define XP 9  // can be a digital pin
 
 // Vibration pin
-#define VP 13 // change according to pin connected to motor (default: 13 to activate LED)
+#define VP LED_BUILTIN  // change according to pin connected to motor (default: activate LED)
 
 // relay pins
 #define RELAY_PIN_1 53
@@ -127,7 +127,7 @@ MCUFRIEND_kbv tft;
 TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 
 Adafruit_GFX_Button buttons[BUTTON_COUNT];
-char buttonlabels[BUTTON_COUNT][7] = {"A", "B", "links", "rechts", "On", "Off", "MARK", "AUTO"};
+char buttonlabels[BUTTON_COUNT][7] = {"A", "B", "links", "rechts", "Aktiv", "Streue", "MARK", "AUTO"};
 uint16_t buttoncolors[BUTTON_COUNT] = {NAVY, NAVY, ORANGE, ORANGE, RED, MAGENTA, BLUE, GREEN};
 
 // commands struct
@@ -153,11 +153,11 @@ char command_string[33] = {0};
 // CEREA input vars
 String cmd;
 char next_char;
-float gps_speed;
 
 void setup(void)
 {
     Serial.begin(9600);
+    pinMode(VP, OUTPUT);
 
     init_remote_control();
 
@@ -197,7 +197,8 @@ void init_remote_control()
     for (uint8_t row = 0; row < BUTTON_COUNT / 2; row++) {
         for (uint8_t col = 0; col < BUTTON_COUNT / 4; col++) {
             buttons[col + row * 2].initButtonUL(&tft, BUTTON_X + col * (BUTTON_W + BUTTON_SPACING_X),
-                                                BUTTON_Y + row * (BUTTON_H + BUTTON_SPACING_Y), BUTTON_W, BUTTON_H,
+                                                BUTTON_Y + row * (BUTTON_H + BUTTON_SPACING_Y),
+                                                BUTTON_W, BUTTON_H,
                                                 YELLOW, // outline
                                                 buttoncolors[col + row * 2], WHITE, buttonlabels[col + row * 2],
                                                 BUTTON_TEXTSIZE); // text
@@ -208,13 +209,13 @@ void init_remote_control()
 
 void loop(void)
 {
-    // empty string and read from serial port
+      // empty string and read from serial port
     cmd = "";
     read_serial();
     if (cmd.startsWith("@CEREA;")) {
         evaluate_cerea_string();
     }
-
+  
     TSPoint lcd_point;
     lcd_point.x = 0;
     lcd_point.y = 0;
@@ -270,8 +271,10 @@ void loop(void)
                     if (relay_control.manual_override == false) { // manual relay control                        
                         relay_control.manual_override = true;
                         buttons[b].drawButton(true);
-                        buttons[6].drawButton(true);                       
-                        control_marc_and_relays(true);
+                        buttons[6].drawButton(true);
+                        if (relay_control.automatic == false) {
+                            control_marc_and_relays(true);
+                        }
                     } else {                        
                         relay_control.manual_override = false;
                         buttons[b].drawButton();
@@ -305,8 +308,12 @@ void loop(void)
             }
 
             // build and send command string (boolean implicitely casted to decimal 0/1)
-            sprintf(command_string, "@SDOSE;%d;0;0;0;%d;%d;%d;%d;%d;0;0;END", cerea_commands.marc, cerea_commands.A, cerea_commands.B,
-                                                                              cerea_commands.automatic, cerea_commands.left, cerea_commands.right);
+            sprintf(command_string, "@SDOSE;%d;0;0;0;%d;%d;%d;%d;%d;0;0;END", cerea_commands.marc,
+                                                                              cerea_commands.A, 
+                                                                              cerea_commands.B,
+                                                                              cerea_commands.automatic,
+                                                                              cerea_commands.left,
+                                                                              cerea_commands.right);
             Serial.println(command_string);
 
             // reset non-toggle buttons
@@ -320,13 +327,12 @@ void loop(void)
             }
         }
     }
-
-    delay(40); // UI debouncing
-
+    
+    delay(10); // UI debouncing
     digitalWrite(VP, LOW);
 }
 
-// read from serial interface until EOL (ASCII 10)
+// read from serial interface until line feed (ASCII 10)
 void read_serial()
 {
     do {
@@ -341,43 +347,42 @@ void read_serial()
 
 void evaluate_cerea_string()
 {
+    // no automatic if manual override is false
+    // TODO: this is redundant -> Check with Richard how to proceed
+    if (relay_control.manual_override == false) {
+        return;
+    }
+  
     // remove @Cerea; and search for ;
     cmd.remove(0, 7);
     int first_semicolon = cmd.indexOf(';');
     int second_semicolon = cmd.indexOf(';', first_semicolon + 1);
 
     // read GPS speed
-    gps_speed = cmd.substring(0, first_semicolon).toFloat();
+    float gps_speed = cmd.substring(0, first_semicolon).toFloat();
 
-    // remove speed and -1 and search for command end
+    // remove speed and -1 then search for command end
     cmd.remove(0, second_semicolon + 1);
     int command_end = cmd.indexOf('END');
 
-    // Anzahl partial_fieldn ermitteln
+    // get number of partial fields
     int number_partial_fields = (command_end - 2) / 2;
     // at this point only the first part width is getting evaluated
-    // but a loop is prepared to extend this later to all found ones
-    if (number_partial_fields < 1)
-    {
+    if (number_partial_fields < 1) {
         return;
     }
 
-    // partial_fieldn in einen neuen String
+    // extract partial field 1
     String partial_fields = cmd.substring(0, command_end - 3);
-    String partial_field_1 = partial_fields.substring(0, 1);
+    int partial_field_1 = partial_fields.substring(0, 1).toInt();
 
-    if (gps_speed >= 2.5)    {
-        if (partial_field_1 == "1") {
-            // partial field on
-            if (relay_control.automatic == true && 
-                relay_control.manual_override == true) {
-                control_marc_and_relays(true);
-            }
-        }
-        if (partial_field_1 == "0") {
-            // partial field off
-            control_marc_and_relays(false);
-        }
+    // only activate partial field if vehicle is moving and
+    // auto is active 
+    if (gps_speed >= 2.5 && 
+        relay_control.automatic == true &&
+        partial_field_1 == 1) {
+        // partial field on
+        control_marc_and_relays(true);
     } else {
         control_marc_and_relays(false);
     }
