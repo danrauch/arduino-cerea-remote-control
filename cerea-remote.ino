@@ -209,13 +209,13 @@ void init_remote_control()
 
 void loop(void)
 {
-      // empty string and read from serial port
+    // empty string and read from serial port
     cmd = "";
     read_serial();
     if (cmd.startsWith("@CEREA;")) {
         evaluate_cerea_string();
     }
-  
+
     TSPoint lcd_point;
     lcd_point.x = 0;
     lcd_point.y = 0;
