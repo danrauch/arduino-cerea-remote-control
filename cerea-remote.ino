@@ -66,6 +66,7 @@
 #define NAVY 0x000F
 
 // UI details
+#define BUTTON_COUNT 8
 #define BUTTON_X 1
 #define BUTTON_Y 10
 #define BUTTON_W 150
@@ -125,18 +126,34 @@
 MCUFRIEND_kbv tft;
 TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 
-Adafruit_GFX_Button buttons[8];
-char buttonlabels[8][7] = {"A", "B", "links", "rechts", "On", "Off", "MARK", "AUTO"};
-uint16_t buttoncolors[8] = {NAVY, NAVY, ORANGE, ORANGE, RED, MAGENTA, BLUE, GREEN};
+Adafruit_GFX_Button buttons[BUTTON_COUNT];
+char buttonlabels[BUTTON_COUNT][7] = {"A", "B", "links", "rechts", "On", "Off", "MARK", "AUTO"};
+uint16_t buttoncolors[BUTTON_COUNT] = {NAVY, NAVY, ORANGE, ORANGE, RED, MAGENTA, BLUE, GREEN};
 
-// command buffer (TODO: may be easier to read if a struct is used, but more memory is used due to padding)
-uint8_t commands[11] = {0};
+// commands struct
+struct {
+  bool marc;
+  bool contour;
+  bool A;
+  bool B;
+  bool automatic;
+  bool left;
+  bool right;
+  bool turn_left;
+  bool turn_right;
+} cerea_commands;
+
+struct {
+  bool automatic;
+  bool manual_override;
+} relay_control;
+
 char command_string[33] = {0};
 
 // CEREA input vars
 String cmd;
 char next_char;
-float gpsspeed;
+float gps_speed;
 
 void setup(void)
 {
@@ -153,6 +170,9 @@ void setup(void)
 
 void init_remote_control()
 {
+    memset(&cerea_commands, 0, sizeof(cerea_commands));
+    memset(&relay_control, 0, sizeof(relay_control));
+    
     Serial.println(F("TFT LCD test"));
     tft.reset();
 
@@ -174,8 +194,8 @@ void init_remote_control()
     tft.fillScreen(BLACK);
 
     // create buttons
-    for (uint8_t row = 0; row < 4; row++) {
-        for (uint8_t col = 0; col < 2; col++) {
+    for (uint8_t row = 0; row < BUTTON_COUNT / 2; row++) {
+        for (uint8_t col = 0; col < BUTTON_COUNT / 4; col++) {
             buttons[col + row * 2].initButtonUL(&tft, BUTTON_X + col * (BUTTON_W + BUTTON_SPACING_X),
                                                 BUTTON_Y + row * (BUTTON_H + BUTTON_SPACING_Y), BUTTON_W, BUTTON_H,
                                                 YELLOW, // outline
@@ -212,7 +232,7 @@ void loop(void)
         lcd_point.x = map(touch_point.y, TS_MINY, TS_MAXY, 0, tft.width());
     }
 
-    for (uint8_t b = 0; b < 8; b++) {
+    for (uint8_t b = 0; b < BUTTON_COUNT; b++) {
         if (buttons[b].contains(lcd_point.x, lcd_point.y)) {
             buttons[b].press(true); // tell the button it is pressed
         } else {
@@ -220,7 +240,7 @@ void loop(void)
         }
     }
 
-    for (uint8_t b = 0; b < 8; b++) {
+    for (uint8_t b = 0; b < BUTTON_COUNT; b++) {
         if (buttons[b].justPressed()) {
             digitalWrite(VP, HIGH); // activate the vibration pin if a button is pressed
             if (b < 4) {
@@ -228,61 +248,55 @@ void loop(void)
             }
 
             // possible CEREA commands:
-            // marc, contur, A, B, auto, left, right, turn left, turn right
+            // marc, contour, A, B, auto, left, right, turn left, turn right
             // e.g. activate marc:
             // Serial.println ("@SDOSE;1;0;0;0;0;0;0;0;0;0;0;END");
 
             switch (b) {
-                case 0: commands[3] = 1; break; // A
-                case 1: commands[4] = 1; break; // B
-                case 2: commands[6] = 1; break; // left
-                case 3: commands[7] = 1; break; // right
+                case 0: cerea_commands.A = true; break; // A
+                case 1: cerea_commands.B = true; break; // B
+                case 2: cerea_commands.left = true; break; // left
+                case 3: cerea_commands.right = true; break; // right
                 case 4:
-                    if (commands[2] == 0) { // relay automatic active
-                        
-                        commands[2] = 1;
+                    if (relay_control.automatic == false) { // relay automatic active                        
+                        relay_control.automatic = true;
                         buttons[b].drawButton(true);
-                    } else {
-                        
-                        commands[2] = 0;
+                    } else {                        
+                        relay_control.automatic = false;
                         buttons[b].drawButton();
                     }
                     break;
                 case 5:
-                    if (commands[1] == 0) { // manual relay control                        
-                        commands[1] = 1;
-                        buttons[b].drawButton(true);                        
-                        commands[0] = 1;  // enable marc with relay
-                        buttons[6].drawButton(true);
-                        digitalWrite(RELAY_PIN_1, HIGH);
-                        digitalWrite(RELAY_PIN_2, HIGH);
+                    if (relay_control.manual_override == false) { // manual relay control                        
+                        relay_control.manual_override = true;
+                        buttons[b].drawButton(true);
+                        buttons[6].drawButton(true);                       
+                        control_marc_and_relays(true);
                     } else {                        
-                        commands[1] = 0;
+                        relay_control.manual_override = false;
                         buttons[b].drawButton();
-                        commands[0] = 0;  // disable marc with relay
                         buttons[6].drawButton();
-                        digitalWrite(RELAY_PIN_1, LOW);
-                        digitalWrite(RELAY_PIN_2, LOW);
+                        control_marc_and_relays(false);
                     }
                     break;
                 case 6:
-                    if (commands[0] == 0) { // marc
-                        commands[0] = 1;
+                    if (cerea_commands.marc == false) { // marc
+                        cerea_commands.marc = true;
                         buttons[b].drawButton(true);
                     } else {
-                        commands[0] = 0;
+                        cerea_commands.marc = false;
                         buttons[b].drawButton();
                     }
                     break;
                 case 7:
-                    if (commands[5] == 0) { // AUTO
-                        commands[5] = 1;
-                        commands[0] = 1; // enable marc with auto
+                    if (cerea_commands.automatic == false) { // AUTO
+                        cerea_commands.automatic = true;
+                        cerea_commands.marc = true; // enable marc with auto
                         buttons[6].drawButton(true);
                         buttons[b].drawButton(true);
                     } else {
-                        commands[5] = 0;
-                        commands[0] = 0; // disable marc with auto
+                        cerea_commands.automatic = false;
+                        cerea_commands.marc = false; // disable marc with auto
                         buttons[b].drawButton();
                         buttons[6].drawButton();
                     }
@@ -290,15 +304,15 @@ void loop(void)
                 default: break;
             }
 
-            // build and send command string
-            sprintf(command_string, "@SDOSE;%d;0;0;0;%d;%d;%d;%d;%d;0;0;END", commands[0], commands[3], commands[4],
-                                                                              commands[5], commands[6], commands[7]);
+            // build and send command string (boolean implicitely casted to decimal 0/1)
+            sprintf(command_string, "@SDOSE;%d;0;0;0;%d;%d;%d;%d;%d;0;0;END", cerea_commands.marc, cerea_commands.A, cerea_commands.B,
+                                                                              cerea_commands.automatic, cerea_commands.left, cerea_commands.right);
             Serial.println(command_string);
 
             // reset non-toggle buttons
-            commands[3] = 0;            
-            commands[6] = 0;
-            commands[7] = 0;
+            cerea_commands.A = false;            
+            cerea_commands.left = false;
+            cerea_commands.right = false;
         }
         if (buttons[b].justReleased()) {
             if (b < 4) {
@@ -327,50 +341,57 @@ void read_serial()
 
 void evaluate_cerea_string()
 {
-    // remove @Cerea;
+    // remove @Cerea; and search for ;
     cmd.remove(0, 7);
-
-    //GPS Geschwindigkeit auslesen
-    gpsspeed = cmd.toFloat();
-
-    // Nach erstem ; suchen
     int first_semicolon = cmd.indexOf(';');
-
-    // Nach zweiten ; suchen
     int second_semicolon = cmd.indexOf(';', first_semicolon + 1);
 
-    // Geschwindigkeit und -1 entfernen
-    cmd.remove(0, second_semicolon + 1);
+    // read GPS speed
+    gps_speed = cmd.substring(0, first_semicolon).toFloat();
 
-    // Suche nach "END" (signalisiert Kommandoende)
+    // remove speed and -1 and search for command end
+    cmd.remove(0, second_semicolon + 1);
     int command_end = cmd.indexOf('END');
 
-    // Anzahl teilbreiten ermitteln
-    int anzahl_teilbreiten = (command_end - 2) / 2;
+    // Anzahl partial_fieldn ermitteln
+    int number_partial_fields = (command_end - 2) / 2;
+    // at this point only the first part width is getting evaluated
+    // but a loop is prepared to extend this later to all found ones
+    if (number_partial_fields < 1)
+    {
+        return;
+    }
 
-    // Teilbreiten in einen neuen String
-    String teilbreite = cmd.substring(0, command_end - 3);
+    // partial_fieldn in einen neuen String
+    String partial_fields = cmd.substring(0, command_end - 3);
+    String partial_field_1 = partial_fields.substring(0, 1);
 
-    // ### Servos anhand von extrahierten String steuern ###
-
-    //Geschwindigkeitsabfrage
-
-    if (gpsspeed >= 2.5) {
-        // Schleife über alle gefundenen Teilbreiten
-        for (int i = 0; i < anzahl_teilbreiten * 2; i = i + 2) {
-            if (teilbreite.substring(i, i + 1) == "1") {
-                // Teilbreite einschalten
-                motor[i / 2].write(WINKEL_TEILBREITE_EIN);
+    if (gps_speed >= 2.5)    {
+        if (partial_field_1 == "1") {
+            // partial field on
+            if (relay_control.automatic == true && 
+                relay_control.manual_override == true) {
+                control_marc_and_relays(true);
             }
-            if (teilbreite.substring(i, i + 1) == "0") {
-                // Teilbreite ausschalten
-                motor[i / 2].write(WINKEL_TEILBREITE_AUS);
-            }
+        }
+        if (partial_field_1 == "0") {
+            // partial field off
+            control_marc_and_relays(false);
         }
     } else {
-        for (int i = 0; i < anzahl_teilbreiten * 2; i = i + 2) {
-            // Teilbreite ausschalten
-            motor[i / 2].write(WINKEL_TEILBREITE_AUS);
-        }
+        control_marc_and_relays(false);
+    }
+}
+
+void control_marc_and_relays(bool enable)
+{
+    if (enable) {
+        cerea_commands.marc = true;  // enable marc with relay                        
+        digitalWrite(RELAY_PIN_1, HIGH);
+        digitalWrite(RELAY_PIN_2, HIGH);
+    } else {
+        cerea_commands.marc = false;  // disable marc with relay        
+        digitalWrite(RELAY_PIN_1, LOW);
+        digitalWrite(RELAY_PIN_2, LOW);
     }
 }
