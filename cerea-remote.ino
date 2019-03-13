@@ -121,8 +121,6 @@
 #define MIN_PRESSURE 10
 #define MAX_PRESSURE 1000
 
-#define MAX_READ_RETRIES 1000
-
 // ### Global variables ###
 
 MCUFRIEND_kbv tft;
@@ -131,7 +129,6 @@ TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 Adafruit_GFX_Button buttons[BUTTON_COUNT];
 char buttonlabels[BUTTON_COUNT][7] = {"A", "B", "links", "rechts", "Aktiv", "Streue", "MARK", "AUTO"};
 uint16_t buttoncolors[BUTTON_COUNT] = {NAVY, NAVY, ORANGE, ORANGE, RED, MAGENTA, BLUE, GREEN};
-uint32_t loop_ct = 0;
 
 // commands struct
 struct {
@@ -160,7 +157,9 @@ char next_char;
 void setup(void)
 {
     Serial.begin(9600);
-    pinMode(VP, OUTPUT);
+    cmd = "";
+  
+    pinMode(VP, OUTPUT);  
 
     init_remote_control();
 
@@ -214,13 +213,11 @@ void loop(void)
 {
     // if read_serial did reach end, eval string
     if (read_serial()) {
-      if (cmd.startsWith("@CEREA;")) {
-          evaluate_cerea_string();
-      }
-      cmd = "";
+        if (cmd.startsWith("@CEREA;")) {
+            evaluate_cerea_string();
+        }
+        cmd = "";
     }
-
-    loop_ct = 0;
 
     TSPoint lcd_point;
     lcd_point.x = 0;
@@ -334,33 +331,31 @@ void loop(void)
     }
     
     digitalWrite(VP, LOW);
+  
+    // debounce UI
+    delay(10);
 }
 
-// read from serial interface until line feed (ASCII 10)
+// read from serial interface
 bool read_serial()
 {
-    do {
-        if (Serial.available() > 0) {
-            next_char = Serial.read();
-            if (next_char >= 32) {
-                cmd += next_char;    
-            }
+    while (Serial.available() > 0) {
+        next_char = Serial.read();
+        if (next_char >= 32) {
+            cmd += next_char;    
+        }  
+        // if there is a '\n' (ASCII: 10|dec), the whole input is read
+        if (next_char == 10) {
+            return true;
         }
-        loop_ct++;
-
-        // return after a certain wait period to allow for GUI update
-        if (loop_ct >= MAX_READ_RETRIES) {
-            return false;
-        }
-    } while (next_char != 10);
-
-    return true;
+    }
+            
+    return false;
 }
 
 void evaluate_cerea_string()
 {
     // no automatic if manual override is false
-    // TODO: this is redundant -> Check with Richard how to proceed
     if (!relay_control.manual_override) {
         return;
     }
