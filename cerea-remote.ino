@@ -121,6 +121,8 @@
 #define MIN_PRESSURE 10
 #define MAX_PRESSURE 1000
 
+#define MIN_GPS_SPEED 2.5
+
 // ### Global variables ###
 
 MCUFRIEND_kbv tft;
@@ -132,21 +134,23 @@ uint16_t buttoncolors[BUTTON_COUNT] = {NAVY, NAVY, ORANGE, ORANGE, RED, MAGENTA,
 
 // commands struct
 struct {
-  bool marc;
-  bool contour;
-  bool A;
-  bool B;
-  bool auto_on;
-  bool left;
-  bool right;
-  bool turn_left;
-  bool turn_right;
+    bool marc;
+    bool contour;
+    bool A;
+    bool B;
+    bool auto_on;
+    bool left;
+    bool right;
+    bool turn_left;
+    bool turn_right;
 } cerea_commands;
 
 struct {
-  bool automatic;
-  bool manual_override;
+    bool automatic;
+    bool manual_override;
 } relay_control;
+
+bool relays_marc_on = false;
 
 char command_string[33] = {0};
 
@@ -158,7 +162,7 @@ void setup(void)
 {
     Serial.begin(9600);
     cmd = "";
-  
+
     pinMode(VP, OUTPUT);  
 
     init_remote_control();
@@ -262,7 +266,7 @@ void loop(void)
                 case 2: cerea_commands.left = true; break; // left
                 case 3: cerea_commands.right = true; break; // right
                 case 4:
-                    if (!relay_control.automatic) { // relay automatic active                        
+                    if (!relay_control.automatic) { // relay automatic active
                         relay_control.automatic = true;
                         buttons[b].drawButton(true);
                     } else {                        
@@ -271,14 +275,14 @@ void loop(void)
                     }
                     break;
                 case 5:
-                    if (!relay_control.manual_override) { // manual relay control                        
+                    if (!relay_control.manual_override) { // manual relay control
                         relay_control.manual_override = true;
                         buttons[b].drawButton(true);
                         buttons[6].drawButton(true);
                         if (!relay_control.automatic) {
                             control_marc_and_relays(true);
                         }
-                    } else {                        
+                    } else {
                         relay_control.manual_override = false;
                         buttons[b].drawButton();
                         buttons[6].drawButton();
@@ -329,11 +333,8 @@ void loop(void)
             buttons[b].drawButton();
         }
     }
-    
+
     digitalWrite(VP, LOW);
-  
-    // debounce UI
-    delay(10);
 }
 
 // read from serial interface
@@ -342,14 +343,14 @@ bool read_serial()
     while (Serial.available() > 0) {
         next_char = Serial.read();
         if (next_char >= 32) {
-            cmd += next_char;    
-        }  
+            cmd += next_char;
+        }
         // if there is a '\n' (ASCII: 10|dec), the whole input is read
         if (next_char == 10) {
             return true;
         }
     }
-            
+
     return false;
 }
 
@@ -359,7 +360,7 @@ void evaluate_cerea_string()
     if (!relay_control.manual_override) {
         return;
     }
-  
+
     // remove @Cerea; and search for ;
     cmd.remove(0, 7);
     int first_semicolon = cmd.indexOf(';');
@@ -370,7 +371,7 @@ void evaluate_cerea_string()
 
     // remove speed and -1 then search for command end
     cmd.remove(0, second_semicolon + 1);
-    int command_end = cmd.indexOf('END');
+    int command_end = cmd.indexOf("END");
 
     // get number of partial fields
     int number_partial_fields = (command_end - 2) / 2;
@@ -383,27 +384,25 @@ void evaluate_cerea_string()
     String partial_fields = cmd.substring(0, command_end - 3);
     int partial_field_1 = partial_fields.substring(0, 1).toInt();
 
-    // only activate partial field if vehicle is moving and
-    // auto is active 
-    if (gps_speed >= 2.5 && relay_control.automatic &&
-        partial_field_1 == 1) {
-        // partial field on
-        control_marc_and_relays(true);
-    } else {
-        control_marc_and_relays(false);
+    // activate partial field if vehicle is moving & auto is active 
+    bool enable_relay_marc = (gps_speed >= MIN_GPS_SPEED) && relay_control.automatic && (partial_field_1 == 1);
+    // do nothing if state requested by automatic already set
+    if (enable_relay_marc == relays_marc_on && enable_relay_marc == cerea_commands.marc) {
+        return;
     }
+
+    control_marc_and_relays(enable_relay_marc);
 }
 
 void control_marc_and_relays(bool enable)
 {
+    relays_marc_on = enable;
+    cerea_commands.marc = enable;
+    buttons[6].drawButton(enable);
     if (enable) {
-        cerea_commands.marc = true;  // enable marc with relay 
-        buttons[6].drawButton(true);                       
         digitalWrite(RELAY_PIN_1, HIGH);
         digitalWrite(RELAY_PIN_2, HIGH);
     } else {
-        cerea_commands.marc = false;  // disable marc with relay     
-        buttons[6].drawButton();   
         digitalWrite(RELAY_PIN_1, LOW);
         digitalWrite(RELAY_PIN_2, LOW);
     }
