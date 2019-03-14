@@ -5,19 +5,23 @@ import serial
 
 def main():
     com_port = 'COM6'
-    send_delay = 0.50
+    # com_port = '/dev/cu.usbmodemFA1301'
+    send_delay = 0.5
+
     try:
-        serial_port = serial.Serial(com_port, baudrate=115200, timeout=0.010)
+        serial_port = serial.Serial(com_port, timeout=0.001)
     except serial.SerialException as e:
         print(e)
         sys.exit(1)
 
+    print("Send commands with",send_delay,"seconds delay")
     try:
         while True:
-            print("send")
+            print("> @CEREA;5.0;-1;1;1;1;1;1;1;1;1;1;1;END")
             serial_port.write(b'@CEREA;5.0;-1;1;1;1;1;1;1;1;1;1;1;END\r\n')
             time.sleep(send_delay)
             print(serial_port.read_until())
+            print("> @HIDRAU;1;END")
             serial_port.write(b'@HIDRAU;1;END\r\n')
             time.sleep(send_delay)
             print(serial_port.read_until())

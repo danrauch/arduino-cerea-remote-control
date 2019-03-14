@@ -1,5 +1,5 @@
 /*
- * cerea remote control
+ * Cerea remote control
  *
  * MIT License
  *
@@ -345,6 +345,9 @@ void loop(void)
             buttons[b].drawButton();
         }
     }
+
+    // debounce UI
+    delay(10);
 
     digitalWrite(VP, LOW);
 }

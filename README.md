@@ -6,9 +6,11 @@ Currently supported features are: MARC, A, B, right, left, AUTO
 
 Necessary Hardware:
 
-- Arduino MEGA 2560
+- Arduino MEGA 2560 with capacitor (>22 µF) between reset and ground
 - TFT/touchscreen shield supported by the Adafruit TFTLCD and Touchscreen library
 - Optional: vibration motor
+
+**Important:** Per default the Arduino resets completely as soon as a serial connection is opened. For some reason in case of the Cerea output the board thinks it is flashed and thus freezes. To avoid this the auto reset must be disabled via a capacitor (>22 µF) between the reset and ground pin.
 
 ## About Cerea
 
