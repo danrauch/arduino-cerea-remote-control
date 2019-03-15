@@ -50,5 +50,5 @@ Commands seem to arrive in 0.5 second cycles (confirmation needed).
 | **@AUTO** | - | Activates AUTO. | `"@AUTO\r\n"` (activate MARC) |
 | **@BOOMBOX;<br/>*S0*;*S1*;...;*S9*;END** | *S0&#8209;9*: boom sections&nbsp;[1/0] | Set boom box section states (left to right).<br/>The state of all 10 sections must be transmitted. | `"@BOOMBOX;  \ 0;0;0;0;0;0;0;0;0;0;\r\n"`<br/>(deactivate all sections) |
 | **@PRESION;*P*;END** | *P*: pressure&nbsp;[float] | Set pressure in ?<br/>(confirmation needed).  | `"@PRESION;1.0;END\r\n"`<br/>(set pressure to 1.0) |
-| **@CAUDAL;*C*;END** | *F*: flow&nbsp;[float] | Set flow in L/min<br/>(confirmation needed).  | `"@CAUDAL;1.0;END\r\n"`<br/>(set flow to 1.0) |
+| **@CAUDAL;*F*;END** | *F*: flow&nbsp;[float] | Set flow in L/min<br/>(confirmation needed).  | `"@CAUDAL;1.0;END\r\n"`<br/>(set flow to 1.0) |
 | **@APLICADO;*A*;END** | *A*: applied&nbsp;flow&nbsp;[float] | Set applied flow in L/ha<br/>(confirmation needed).  | `"@APLICADO;1.0;END\r\n"`<br/>(set applied flow to 1.0) |

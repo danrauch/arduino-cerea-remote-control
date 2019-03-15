@@ -159,18 +159,19 @@ struct {
     bool manual_override;
 } relay_control;
 
+// relay state cache
 bool relays_marc_on = false;
 
-char command_string[33] = {0};
+// output command string
+char cerea_command_out[33] = {0};
 
-// CEREA input vars
-String cmd;
-char next_char;
+// Cerea input command buffer
+String cerea_command_in;
 
 void setup(void)
 {
     Serial.begin(9600);
-    cmd = "";
+    cerea_command_in = "";
 
     pinMode(VP, OUTPUT);  
 
@@ -226,10 +227,10 @@ void loop(void)
 {
     // if read_serial did reach end, eval string
     if (read_serial()) {
-        if (cmd.startsWith("@CEREA;")) {
+        if (cerea_command_in.startsWith("@CEREA;")) {
             evaluate_cerea_string();
         }
-        cmd = "";
+        cerea_command_in = "";
     }
 
     TSPoint lcd_point;
@@ -326,13 +327,13 @@ void loop(void)
             // no command to CEREA is necessary if button relay auto is pressed
             if (b != BUTTON_RELAY_AUTO) {
                 // build and send command string (boolean implicitely casted to decimal 0/1)
-                sprintf(command_string, "@SDOSE;%d;0;0;0;%d;%d;%d;%d;%d;0;0;END", cerea_commands.marc,
-                                                                                  cerea_commands.A, 
-                                                                                  cerea_commands.B,
-                                                                                  cerea_commands.auto_on,
-                                                                                  cerea_commands.left,
-                                                                                  cerea_commands.right);
-                Serial.println(command_string);
+                sprintf(cerea_command_out, "@SDOSE;%d;0;0;0;%d;%d;%d;%d;%d;0;0;END", cerea_commands.marc,
+                                                                                     cerea_commands.A, 
+                                                                                     cerea_commands.B,
+                                                                                     cerea_commands.auto_on,
+                                                                                     cerea_commands.left,
+                                                                                     cerea_commands.right);
+                Serial.println(cerea_command_out);
             }
 
             // reset non-toggle buttons
@@ -356,9 +357,9 @@ void loop(void)
 bool read_serial()
 {
     while (Serial.available() > 0) {
-        next_char = Serial.read();
+        char next_char = Serial.read();
         if (next_char >= 32) {
-            cmd += next_char;
+            cerea_command_in += next_char;
         }
         // if there is a '\n' the whole input is read
         if (next_char == '\n') {
@@ -377,16 +378,16 @@ void evaluate_cerea_string()
     }
 
     // remove @Cerea; and search for ;
-    cmd.remove(0, 7);
-    int first_semicolon = cmd.indexOf(';');
-    int second_semicolon = cmd.indexOf(';', first_semicolon + 1);
+    cerea_command_in.remove(0, 7);
+    int first_semicolon = cerea_command_in.indexOf(';');
+    int second_semicolon = cerea_command_in.indexOf(';', first_semicolon + 1);
 
     // read GPS speed in km/h
-    float gps_speed = cmd.substring(0, first_semicolon).toFloat();
+    float gps_speed = cerea_command_in.substring(0, first_semicolon).toFloat();
 
     // remove speed and -1 then search for command end
-    cmd.remove(0, second_semicolon + 1);
-    int command_end = cmd.indexOf("END");
+    cerea_command_in.remove(0, second_semicolon + 1);
+    int command_end = cerea_command_in.indexOf("END");
 
     // get number of partial fields
     int number_boom_sections = (command_end - 2) / 2;
@@ -396,7 +397,7 @@ void evaluate_cerea_string()
     }
 
     // extract partial field 1
-    String boom_sections = cmd.substring(0, command_end - 3);
+    String boom_sections = cerea_command_in.substring(0, command_end - 3);
     int boom_section_1 = boom_sections.substring(0, 1).toInt();
 
     // activate partial field if vehicle is moving & auto is active 
