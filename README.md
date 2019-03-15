@@ -8,7 +8,7 @@ Control and evaluate serial-exposed **Cerea** features comfortably with an Ardui
 Currently supported features are:
 
 - Setting MARC, A, B, right, left, AUTO via touchscreen via @CEREA
-- Reading @SDOSE command to control a relay depending on first boom box section and GPS speed
+- Reading @SDOSE command to control a relay (via pins 49/53) depending on first boom box section and GPS speed
 - Reading @STATUSAM if availabe to sync UI
 
 Necessary Hardware:
@@ -16,13 +16,14 @@ Necessary Hardware:
 - Arduino MEGA 2560
 - TFT/touchscreen shield supported by the Adafruit TFTLCD and Touchscreen library (tested ID: `0x9486`; more can be added)
 - *If USB serial connection is used:* capacitor (>22 µF)
-- *Optional:* vibration motor
+- *Optional:* vibration motor (adjust VIBRATION_MOTOR_PIN for the motor to work)
+- *Optional:* relay(s) connected to pins 49 and/or 53
 
 **Important if a USB serial connection is used:** Per default the Arduino resets completely as soon as a serial connection is opened. For some reason in case of the Cerea output the board thinks it is flashed and thus freezes. To avoid this the auto reset must be disabled via a capacitor (>22 µF) between the reset and ground pin.
 
 ## About Cerea
 
-[Cerea](https://www.cereagps.com/) is a Spain-based agricultural GPS auto-steer system for Windows.
+[Cerea](https://www.cereagps.com/) is a Spain-based company which offers an agricultural GPS auto-steer system for Windows, which is also called Cerea.
 
 It uses serial communication to exchange command sequences, which allow to remote control the system from any device with a serial interface. The following commands were reverse engineered, so no guarantee!
 
