@@ -47,7 +47,7 @@
 #define XP 9  // can be a digital pin
 
 // Vibration pin
-#define VP LED_BUILTIN  // change according to pin connected to motor (default: activate LED)
+#define VIBRATION_MOTOR_PIN LED_BUILTIN  // change according to pin connected to motor (default: activate LED)
 
 // relay pins
 #define RELAY_PIN_1 53
@@ -166,18 +166,17 @@ bool relays_marc_on = false;
 char cerea_command_out[33] = {0};
 
 // Cerea input command buffer
-String cerea_command_in;
+String cerea_command_in = "";
 
 void setup(void)
 {
     Serial.begin(9600);
-    cerea_command_in = "";
-
-    pinMode(VP, OUTPUT);  
 
     init_remote_control();
 
-    // init relay pins
+    // init pins
+    pinMode(VIBRATION_MOTOR_PIN, OUTPUT); 
+    digitalWrite(VIBRATION_MOTOR_PIN, LOW);
     pinMode(RELAY_PIN_1, OUTPUT);
     pinMode(RELAY_PIN_2, OUTPUT);
     digitalWrite(RELAY_PIN_1, LOW);
@@ -260,7 +259,7 @@ void loop(void)
 
     for (uint8_t b = 0; b < BUTTON_COUNT; b++) {
         if (buttons[b].justPressed()) {
-            digitalWrite(VP, HIGH); // activate the vibration pin if a button is pressed
+            digitalWrite(VIBRATION_MOTOR_PIN, HIGH); // activate the vibration pin if a button is pressed
             if (b < 4) {
                 buttons[b].drawButton(true);
             }
@@ -276,50 +275,22 @@ void loop(void)
                 case BUTTON_LEFT: cerea_commands.left = true; break;
                 case BUTTON_RIGHT: cerea_commands.right = true; break;
                 case BUTTON_RELAY_AUTO:
-                    if (!relay_control.automatic) {
-                        relay_control.automatic = true;
-                        buttons[BUTTON_RELAY_AUTO].drawButton(true);
-                    } else {                        
-                        relay_control.automatic = false;
-                        buttons[BUTTON_RELAY_AUTO].drawButton();
-                    }
+                    relay_control.automatic = !relay_control.automatic;
+                    buttons[BUTTON_RELAY_AUTO].drawButton(relay_control.automatic);
                     break;
                 case BUTTON_RELAY_MANUAL:
-                    if (!relay_control.manual_override) {
-                        relay_control.manual_override = true;
-                        buttons[BUTTON_RELAY_MANUAL].drawButton(true);
-                        buttons[BUTTON_MARC].drawButton(true);
-                        if (!relay_control.automatic) {
-                            control_marc_and_relays(true);
-                        }
-                    } else {
-                        relay_control.manual_override = false;
-                        buttons[BUTTON_RELAY_MANUAL].drawButton();
-                        buttons[BUTTON_MARC].drawButton();
-                        control_marc_and_relays(false);
-                    }
+                    relay_control.manual_override = !relay_control.manual_override;
+                    buttons[BUTTON_RELAY_MANUAL].drawButton(relay_control.manual_override);
+                    buttons[BUTTON_MARC].drawButton(relay_control.manual_override);
+                    control_relays(relay_control.manual_override);
                     break;
                 case BUTTON_MARC:
-                    if (!cerea_commands.marc) {
-                        cerea_commands.marc = true;
-                        buttons[BUTTON_MARC].drawButton(true);
-                    } else {
-                        cerea_commands.marc = false;
-                        buttons[BUTTON_MARC].drawButton();
-                    }
+                    cerea_commands.marc = !cerea_commands.marc;
+                    buttons[BUTTON_MARC].drawButton(cerea_commands.marc);
                     break;
                 case BUTTON_CEREA_AUTO:
-                    if (!cerea_commands.auto_on) {
-                        cerea_commands.auto_on = true;
-                        cerea_commands.marc = true; // enable marc with auto
-                        buttons[BUTTON_MARC].drawButton(true);
-                        buttons[BUTTON_CEREA_AUTO].drawButton(true);
-                    } else {
-                        cerea_commands.auto_on = false;
-                        cerea_commands.marc = false; // disable marc with auto
-                        buttons[BUTTON_MARC].drawButton();
-                        buttons[BUTTON_CEREA_AUTO].drawButton();
-                    }
+                    cerea_commands.auto_on = !cerea_commands.auto_on;
+                    buttons[BUTTON_CEREA_AUTO].drawButton(cerea_commands.auto_on);
                     break;
                 default: break;
             }
@@ -350,7 +321,7 @@ void loop(void)
     // debounce UI
     delay(10);
 
-    digitalWrite(VP, LOW);
+    digitalWrite(VIBRATION_MOTOR_PIN, LOW);
 }
 
 // read from serial interface
@@ -373,7 +344,8 @@ bool read_serial()
 void evaluate_cerea_string()
 {
     // no automatic if manual override is false
-    if (!relay_control.manual_override) {
+    if (!relay_control.manual_override || 
+        !relay_control.automatic) {
         return;
     }
 
@@ -404,23 +376,14 @@ void evaluate_cerea_string()
     int boom_section_1 = boom_sections.substring(0, 1).toInt();
 
     // activate partial field if vehicle is moving & auto is active 
-    bool enable_relay_marc = gps_speed >= MIN_GPS_SPEED && 
-                             relay_control.automatic &&
+    bool enable_relay_marc = gps_speed >= MIN_GPS_SPEED &&
                              boom_section_1 == 1;
-    // do nothing if state requested by automatic already set
-    if (enable_relay_marc == relays_marc_on &&
-        enable_relay_marc == cerea_commands.marc) {
-        return;
-    }
 
-    control_marc_and_relays(enable_relay_marc);
+    control_relays(enable_relay_marc);
 }
 
-void control_marc_and_relays(bool enable)
+void control_relays(bool enable)
 {
-    relays_marc_on = enable;
-    cerea_commands.marc = enable;
-    buttons[BUTTON_MARC].drawButton(enable);
     if (enable) {
         digitalWrite(RELAY_PIN_1, HIGH);
         digitalWrite(RELAY_PIN_2, HIGH);
