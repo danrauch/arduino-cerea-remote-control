@@ -381,7 +381,7 @@ void evaluate_cerea_string()
     int first_semicolon = cmd.indexOf(';');
     int second_semicolon = cmd.indexOf(';', first_semicolon + 1);
 
-    // read GPS speed
+    // read GPS speed in km/h
     float gps_speed = cmd.substring(0, first_semicolon).toFloat();
 
     // remove speed and -1 then search for command end
@@ -389,20 +389,20 @@ void evaluate_cerea_string()
     int command_end = cmd.indexOf("END");
 
     // get number of partial fields
-    int number_partial_fields = (command_end - 2) / 2;
+    int number_boom_sections = (command_end - 2) / 2;
     // at this point only the first part width is getting evaluated
-    if (number_partial_fields < 1) {
+    if (number_boom_sections < 1) {
         return;
     }
 
     // extract partial field 1
-    String partial_fields = cmd.substring(0, command_end - 3);
-    int partial_field_1 = partial_fields.substring(0, 1).toInt();
+    String boom_sections = cmd.substring(0, command_end - 3);
+    int boom_section_1 = boom_sections.substring(0, 1).toInt();
 
     // activate partial field if vehicle is moving & auto is active 
     bool enable_relay_marc = gps_speed >= MIN_GPS_SPEED && 
                              relay_control.automatic &&
-                             partial_field_1 == 1;
+                             boom_section_1 == 1;
     // do nothing if state requested by automatic already set
     if (enable_relay_marc == relays_marc_on &&
         enable_relay_marc == cerea_commands.marc) {

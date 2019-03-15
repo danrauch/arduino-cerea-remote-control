@@ -3,18 +3,28 @@ import time
 import serial
 
 
-def main():
+def cerea_simulation():
+    ''' 
+    cerea_simulation() mimics the serial output behaviour of
+    the Cerea auto-steer system. Can be used for testing and
+    prototyping of e.g. Arduino controlles without the necessity
+    of a working Cerea setup.
+
+    The settings of the serial partner have to match.
+    '''
+
     com_port = 'COM6'
     # com_port = '/dev/cu.usbmodemFA1301'
     send_delay = 0.5
 
     try:
-        serial_port = serial.Serial(com_port, timeout=0.001)
+        # defaults to a baudrate of 9600; no parity; 1 stop bit
+        serial_port = serial.Serial(com_port, timeout=0.010)
     except serial.SerialException as e:
         print(e)
         sys.exit(1)
 
-    print("Send commands with",send_delay,"seconds delay")
+    print("Send commands with", send_delay, "seconds delay")
     try:
         while True:
             print("> @CEREA;5.0;-1;1;1;1;1;1;1;1;1;1;1;END")
@@ -31,4 +41,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    cerea_simulation()
