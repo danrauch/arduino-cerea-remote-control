@@ -2,6 +2,7 @@
 
 [![MIT license](https://img.shields.io/github/license/danrauch/arduino-cerea-remote-control.svg)](https://opensource.org/licenses/MIT)
 [![Latest Release](https://img.shields.io/github/release/danrauch/arduino-cerea-remote-control/all.svg)](https://github.com/danrauch/arduino-cerea-remote-control/releases/latest)
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/danrauch)
 
 Control and evaluate serial-exposed **Cerea** features comfortably with an Arduino based touchscreen remote control.
 
@@ -23,7 +24,7 @@ Necessary Hardware:
 
 ## About Cerea
 
-[Cerea](https://www.cereagps.com/) is a Spain-based company which offers an agricultural GPS auto-steer system for Windows, which is also called Cerea.
+[Cerea](https://www.cereagps.com/) is an agricultural GPS auto-steer system for Windows, developed by a Spain-based company called SOLUCIONES TECNOLOGICAS CEREA.
 
 It uses serial communication to exchange command sequences, which allow to remote control the system from any device with a serial interface. The following commands were reverse engineered, so no guarantee!
 
@@ -54,3 +55,6 @@ Commands seem to arrive in 0.5 second cycles (confirmation needed).
 | **@PRESION;*P*;END** | *P*: pressure&nbsp;[float] | Set pressure in ?<br/>(confirmation needed).  | `"@PRESION;1.0;END\r\n"`<br/>(set pressure to 1.0) |
 | **@CAUDAL;*F*;END** | *F*: flow&nbsp;[float] | Set flow in L/min<br/>(confirmation needed).  | `"@CAUDAL;1.0;END\r\n"`<br/>(set flow to 1.0) |
 | **@APLICADO;*A*;END** | *A*: applied&nbsp;flow&nbsp;[float] | Set applied flow in L/ha<br/>(confirmation needed).  | `"@APLICADO;1.0;END\r\n"`<br/>(set applied flow to 1.0) |
+
+## Donation
+If this project / information helps you, you can give me a cup of coffee [here](https://paypal.me/danrauch) :)
