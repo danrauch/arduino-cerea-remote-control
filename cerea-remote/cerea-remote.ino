@@ -127,7 +127,7 @@
 #define TS_MINY 150
 #define TS_MAXY 890
 
-#define MIN_PRESSURE 10
+#define MIN_PRESSURE 5
 #define MAX_PRESSURE 1000
 
 #define MIN_GPS_SPEED 2.5
@@ -228,6 +228,8 @@ void loop(void)
     if (read_serial()) {
         if (cerea_command_in.startsWith("@CEREA;")) {
             evaluate_cerea_string();
+        } else if (cerea_command_in.startsWith("@STATUSAM;")) {
+            evaluate_status_string();
         }
         cerea_command_in = "";
     }
@@ -339,6 +341,27 @@ bool read_serial()
     }
 
     return false;
+}
+
+void evaluate_status_string ()
+{
+    // remove @STATUSAM;
+    cerea_command_in.remove(0, 10);
+
+    // search for index of command end
+    int command_end = cerea_command_in.indexOf("END");
+    if (command_end < 4) {
+        return;
+    }
+
+    bool automatic = cerea_command_in.substring(0, 1).toInt();
+    bool marc = cerea_command_in.substring(2, 3).toInt();
+
+    cerea_commands.auto_on = automatic;
+    buttons[BUTTON_CEREA_AUTO].drawButton(automatic);
+
+    cerea_commands.marc = marc;
+    buttons[BUTTON_MARC].drawButton(marc);
 }
 
 void evaluate_cerea_string()

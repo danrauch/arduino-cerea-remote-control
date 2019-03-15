@@ -9,6 +9,7 @@ Currently supported features are:
 
 - Setting MARC, A, B, right, left, AUTO via touchscreen via @CEREA
 - Reading @SDOSE command to control a relay depending on first boom box section and GPS speed
+- Reading @STATUSAM if availabe to sync UI
 
 Necessary Hardware:
 
