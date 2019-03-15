@@ -3,7 +3,7 @@
 [![MIT license](https://img.shields.io/github/license/danrauch/arduino-cerea-remote-control.svg)](https://opensource.org/licenses/MIT)
 [![Latest Release](https://img.shields.io/github/release/danrauch/arduino-cerea-remote-control/all.svg)](https://github.com/danrauch/arduino-cerea-remote-control/releases/latest)
 
-Control and evaluate Cerea serial-exposed features comfortably with an Arduino based touchscreen remote control.
+Control and evaluate serial-exposed **Cerea** features comfortably with an Arduino based touchscreen remote control.
 
 Currently supported features are:
 
