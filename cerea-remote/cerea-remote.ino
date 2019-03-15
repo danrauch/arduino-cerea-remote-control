@@ -159,9 +159,6 @@ struct {
     bool manual_override;
 } relay_control;
 
-// relay state cache
-bool relays_marc_on = false;
-
 // output command string
 char cerea_command_out[33] = {0};
 
