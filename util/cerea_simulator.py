@@ -24,17 +24,23 @@ def cerea_simulation():
         print(e)
         sys.exit(1)
 
-    print("Send commands with", send_delay, "seconds delay")
+    print('Send commands with', send_delay, 'seconds delay')
+
+    i = 0
+    command_strings =  ['@CEREA;5.0;-1;1;END',
+                        '@CEREA;5.0;-1;0;END',
+                        '@CEREA;5.0;-1;1;1;1;1;1;1;1;1;1;1;END',
+                        '@HIDRAU;1;END',
+                        '@STATUSAM;1;1;END']
+
     try:
         while True:
-            print("> @CEREA;5.0;-1;1;1;1;1;1;1;1;1;1;1;END")
-            serial_port.write(b'@CEREA;5.0;-1;1;1;1;1;1;1;1;1;1;1;END\r\n')
+            command = command_strings[i % len(command_strings)]
+            print('>', command)
+            serial_port.write((command + '\r\n').encode())
             time.sleep(send_delay)
             print(serial_port.read_until())
-            print("> @HIDRAU;1;END")
-            serial_port.write(b'@HIDRAU;1;END\r\n')
-            time.sleep(send_delay)
-            print(serial_port.read_until())
+            i = i + 1
     except KeyboardInterrupt:
         print('Keyboard interrupt by user - exit')
         sys.exit(1)

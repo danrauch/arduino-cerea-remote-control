@@ -371,7 +371,7 @@ bool read_serial()
 }
 
 void evaluate_cerea_string()
-{    
+{
     // no automatic if manual override is false
     if (!relay_control.manual_override) {
         return;
@@ -387,17 +387,20 @@ void evaluate_cerea_string()
 
     // remove speed and -1 then search for command end
     cerea_command_in.remove(0, second_semicolon + 1);
+
+    // search for index of command end
     int command_end = cerea_command_in.indexOf("END");
 
-    // get number of partial fields
-    int number_boom_sections = (command_end - 2) / 2;
-    // at this point only the first part width is getting evaluated
+    // get number of boom box sections (divide because of ;)
+    int number_boom_sections = command_end / 2;
+
+    // abort if no section is detected
     if (number_boom_sections < 1) {
         return;
     }
 
     // extract partial field 1
-    String boom_sections = cerea_command_in.substring(0, command_end - 3);
+    String boom_sections = cerea_command_in.substring(0, command_end);
     int boom_section_1 = boom_sections.substring(0, 1).toInt();
 
     // activate partial field if vehicle is moving & auto is active 
