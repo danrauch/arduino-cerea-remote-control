@@ -3,9 +3,12 @@
 [![MIT license](https://img.shields.io/github/license/danrauch/arduino-cerea-remote-control.svg)](https://opensource.org/licenses/MIT)
 [![Latest Release](https://img.shields.io/github/release/danrauch/arduino-cerea-remote-control/all.svg)](https://github.com/danrauch/arduino-cerea-remote-control/releases/latest)
 
-Control Cerea features comfortably with an Arduino based touchscreen remote control.
+Control and evaluate Cerea serial-exposed features comfortably with an Arduino based touchscreen remote control.
 
-Currently supported features are: MARC, A, B, right, left, AUTO
+Currently supported features are:
+
+- Setting MARC, A, B, right, left, AUTO via touchscreen via @CEREA
+- Reading @SDOSE command to control a relay depending on first boom box section and GPS speed
 
 Necessary Hardware:
 
