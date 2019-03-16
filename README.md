@@ -6,21 +6,32 @@
 
 Control and evaluate serial-exposed **Cerea** features comfortably with an Arduino based touchscreen remote control.
 
-Currently supported features are:
+**Currently supported features are:**
 
-- Setting MARC, A, B, right, left, AUTO via touchscreen via @CEREA
-- Reading @SDOSE command to control a relay (via pins 49/53) depending on first boom box section and GPS speed
+- Setting MARC, A, B, right, left, AUTO via touchscreen (command: @CEREA)
+- Reading @SDOSE command to control a relay (RELAY_PIN_1/2; defaul: via pins 49/53) depending on first boom box section and GPS speed
 - Reading @STATUSAM if availabe to sync UI
+- Vibrate on touch; output on adjustable pin (VIBRATION_MOTOR_PIN; default: built-in LED pin of board) and with adjustable vibration time (VIBRATION_TIME_MS, default: 200 ms)
 
-Necessary Hardware:
+**Necessary Hardware:**
 
 - Arduino MEGA 2560
 - TFT/touchscreen shield supported by the Adafruit TFTLCD and Touchscreen library (tested ID: `0x9486`; more can be added)
 - *If USB serial connection is used:* capacitor (>22 µF)
-- *Optional:* vibration motor (adjust VIBRATION_MOTOR_PIN for the motor to work)
-- *Optional:* relay(s) connected to pins 49 and/or 53
+- *Optional:* vibration motor
+- *Optional:* relay(s)
 
 **Important if a USB serial connection is used:** Per default the Arduino resets completely as soon as a serial connection is opened. For some reason in case of the Cerea output the board thinks it is flashed and thus freezes. To avoid this the auto reset must be disabled via a capacitor (>22 µF) between the reset and ground pin.
+
+**Dependencies**
+
+To use this sketch the following libraries must be downloaded and imported to the Arduino IDE. Either download them directly with the provided links and import them ("Sketch"->"Add .ZIP Library") or search them in the Arduino IDE Library Manager ("Tools"->"Library" Manager"). It is recommended to keep the libraries up to date!
+
+- [Adafruit GFX Library](https://github.com/adafruit/Adafruit-GFX-Library)
+- [Adafruit TFT-LCD Library](https://github.com/adafruit/TFTLCD-Library)
+- [Adafruit Touchscreen Library](https://github.com/adafruit/Adafruit_TouchScreen)
+- [MCUFRIEND_kbv Library](https://github.com/prenticedavid/MCUFRIEND_kbv)
+
 
 ## About Cerea
 

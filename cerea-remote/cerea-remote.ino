@@ -46,8 +46,11 @@
 #define YM 8  // can be a digital pin
 #define XP 9  // can be a digital pin
 
-// Vibration pin
-#define VIBRATION_MOTOR_PIN LED_BUILTIN  // change according to pin connected to motor (default: activate LED)
+// Vibration control
+// change pin according to pin connected to motor!
+// default: use pin of onboard LED to showcase the feature
+#define VIBRATION_MOTOR_PIN LED_BUILTIN
+#define VIBRATION_TIME_MS 200 
 
 // relay pins
 #define RELAY_PIN_1 53
@@ -161,9 +164,10 @@ struct {
 
 // output command string
 char cerea_command_out[33] = {0};
-
 // Cerea input command buffer
 String cerea_command_in = "";
+
+unsigned long start_time_ms = 0;
 
 void setup(void)
 {
@@ -258,7 +262,9 @@ void loop(void)
 
     for (uint8_t b = 0; b < BUTTON_COUNT; b++) {
         if (buttons[b].justPressed()) {
-            digitalWrite(VIBRATION_MOTOR_PIN, HIGH); // activate the vibration pin if a button is pressed
+            // activate the vibration pin if a button is pressed
+            digitalWrite(VIBRATION_MOTOR_PIN, HIGH);
+            start_time_ms = millis();
             if (b < 4) {
                 buttons[b].drawButton(true);
             }
@@ -320,7 +326,9 @@ void loop(void)
     // debounce UI
     delay(10);
 
-    digitalWrite(VIBRATION_MOTOR_PIN, LOW);
+    if ((millis() - start_time_ms) > VIBRATION_TIME_MS) {
+        digitalWrite(VIBRATION_MOTOR_PIN, LOW);
+    }
 }
 
 // read from serial interface
