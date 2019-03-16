@@ -286,6 +286,7 @@ void loop(void)
                 case BUTTON_RELAY_MANUAL:
                     relay_control.manual_override = !relay_control.manual_override;
                     buttons[BUTTON_RELAY_MANUAL].drawButton(relay_control.manual_override);
+                    cerea_commands.marc = relay_control.manual_override;
                     buttons[BUTTON_MARC].drawButton(relay_control.manual_override);
                     control_relays(relay_control.manual_override);
                     break;
