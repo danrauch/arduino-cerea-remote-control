@@ -12,7 +12,7 @@ Control and evaluate serial-exposed **Cerea** features comfortably with an Ardui
 - Reading @SDOSE command to control a relay (RELAY_PIN_1/2; defaul: via pins 49/53) depending on first boom box section and GPS speed. Can be enabled/disabled via touchscreen (enabled when "Aktiv" and "Streu" are active).
 - Control relays also manually via touchscreen ("Streu" button).
 - Reading @STATUSAM if availabe to sync UI
-- Vibrate on touch; output on adjustable pin (VIBRATION_MOTOR_PIN; default: built-in LED pin of board) and with adjustable vibration time (VIBRATION_TIME_MS, default: 200 ms)
+- Vibrate on touch; output on adjustable pin (VIBRATION_MOTOR_PIN; default: built-in LED pin of board, which is pin 13 on the MEGA) and with adjustable vibration time (VIBRATION_TIME_MS, default: 200 ms)
 
 **Necessary Hardware**
 
