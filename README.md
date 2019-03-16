@@ -6,7 +6,7 @@
 
 Control and evaluate serial-exposed **Cerea** features comfortably with an Arduino based touchscreen remote control.
 
-**Currently supported features are:**
+**Currently supported features**
 
 - Setting MARC, A, B, right, left, AUTO via touchscreen (command: @CEREA)
 - Reading @SDOSE command to control a relay (RELAY_PIN_1/2; defaul: via pins 49/53) depending on first boom box section and GPS speed. Can be enabled/disabled via touchscreen (enabled when "Aktiv" and "Streu" are active).
@@ -14,15 +14,15 @@ Control and evaluate serial-exposed **Cerea** features comfortably with an Ardui
 - Reading @STATUSAM if availabe to sync UI
 - Vibrate on touch; output on adjustable pin (VIBRATION_MOTOR_PIN; default: built-in LED pin of board) and with adjustable vibration time (VIBRATION_TIME_MS, default: 200 ms)
 
-**Necessary Hardware:**
+**Necessary Hardware**
 
 - Arduino MEGA 2560
 - TFT/touchscreen shield supported by the Adafruit TFTLCD and Touchscreen library (tested ID: `0x9486`; more can be added)
 - *If USB serial connection is used:* capacitor (>22 µF)
-- *Optional:* vibration motor
-- *Optional:* relay(s)
+- Optional: vibration motor
+- Optional: relay(s)
 
-**Important if a USB serial connection is used:** Per default the Arduino resets completely as soon as a serial connection is opened. For some reason in case of the Cerea output the board thinks it is flashed and thus freezes. To avoid this the auto reset must be disabled via a capacitor (>22 µF) between the reset and ground pin.
+*Important if a USB serial connection is used:* Per default the Arduino resets completely as soon as a serial connection is opened. For some reason in case of the Cerea output the board thinks it is flashed and thus freezes. To avoid this the auto reset must be disabled via a capacitor (>22 µF) between the reset and ground pin.
 
 **Dependencies**
 
@@ -70,4 +70,4 @@ Commands seem to arrive in 0.5 second cycles (confirmation needed).
 
 ## Donation
 
-If this project / information helps you, you can fund a ["Hoibe beer"](https://bar.wikipedia.org/wiki/Bia) for me [**here**](https://paypal.me/danrauch) :)
+If this project / information helps you, you can fund a ["Maß"](https://bar.wikipedia.org/wiki/Bia) beer for me [**here**](https://paypal.me/danrauch) :)
