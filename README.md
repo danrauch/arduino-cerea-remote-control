@@ -24,7 +24,7 @@ Control and evaluate serial-exposed **Cerea** features comfortably with an Ardui
 
 *Important if a USB serial connection is used:* Per default the Arduino resets completely as soon as a serial connection is opened. For some reason in case of the Cerea output the board thinks it is flashed and thus freezes. To avoid this the auto reset must be disabled via a capacitor (>22 µF) between the reset and ground pin.
 
-Riku from the German [Cerea forum](cerea-forum.de) built an excellent housing for the Arduino and was nice enough to provide all necessary resources (German). Have look at the basics [here](https://cerea-forum.de/forum/index.php?thread/440-externe-touchscreen-bedieneinheit-bauanleitung/) and the extension [here](https://cerea-forum.de/forum/index.php?thread/493-externe-touchscreen-bedieneinheit-automatisierte-schaltung/).
+Riku from the German [Cerea forum](http://cerea-forum.de/) built an excellent housing for the Arduino and was nice enough to provide all necessary resources (German). Have look at the basics [here](https://cerea-forum.de/forum/index.php?thread/440-externe-touchscreen-bedieneinheit-bauanleitung/) and the extension [here](https://cerea-forum.de/forum/index.php?thread/493-externe-touchscreen-bedieneinheit-automatisierte-schaltung/).
 
 **Dependencies**
 
