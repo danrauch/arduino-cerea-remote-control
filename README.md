@@ -4,7 +4,7 @@
 [![Latest Release](https://img.shields.io/github/release/danrauch/arduino-cerea-remote-control/all.svg)](https://github.com/danrauch/arduino-cerea-remote-control/releases/latest)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/danrauch)
 
-Control and evaluate serial-exposed **Cerea** features comfortably with an Arduino based touchscreen remote control.
+Control and evaluate serial-exposed **Cerea** features comfortably with an Arduino based touchscreen remote control. To see it in action have a look [here](https://www.youtube.com/watch?v=ZrCHwqn8U7Y) (German)!
 
 **Currently supported features**
 
@@ -16,23 +16,24 @@ Control and evaluate serial-exposed **Cerea** features comfortably with an Ardui
 
 **Necessary Hardware**
 
-- Arduino MEGA 2560
-- TFT/touchscreen shield supported by the Adafruit TFTLCD and Touchscreen library (tested ID: `0x9486`; more can be added)
+- [Arduino MEGA 2560](https://store.arduino.cc/mega-2560-r3)
+- 3.5" TFT/touchscreen shield (480x320; 16 bit colors) supported by the Adafruit TFTLCD and Touchscreen library (tested: [Kuman version with ILI9486](https://www.amazon.com/Kuman-Arduino-Screen-Tutorials-Mega2560/dp/B075FP83V5/); more can be added)
 - *If USB serial connection is used:* capacitor (>22 µF)
-- Optional: vibration motor
-- Optional: relay(s)
+- Optional: vibration motor (e.g. [seeed Groove VM](https://www.seeedstudio.com/category/Grove-c-1003/Grove-Vibration-Motor.html))
+- Optional: relay(s)  (e.g. [seeed Groove 2CH Relay](https://www.seeedstudio.com/Grove-2-Channel-SPDT-Relay-p-3118.html))
 
 *Important if a USB serial connection is used:* Per default the Arduino resets completely as soon as a serial connection is opened. For some reason in case of the Cerea output the board thinks it is flashed and thus freezes. To avoid this the auto reset must be disabled via a capacitor (>22 µF) between the reset and ground pin.
 
+Riku from the German [Cerea forum](cerea-forum.de) built an excellent housing for the Arduino and was nice enough to provide all necessary resources (German). Have look at the basics [here](https://cerea-forum.de/forum/index.php?thread/440-externe-touchscreen-bedieneinheit-bauanleitung/) and the extension [here](https://cerea-forum.de/forum/index.php?thread/493-externe-touchscreen-bedieneinheit-automatisierte-schaltung/).
+
 **Dependencies**
 
-To use this sketch the following libraries must be downloaded and imported to the Arduino IDE. Either download them directly with the provided links and import them ("Sketch"->"Add .ZIP Library") or search them in the Arduino IDE Library Manager ("Tools"->"Library" Manager"). It is recommended to keep the libraries up to date!
+To use this sketch the following libraries must be downloaded and imported to the Arduino IDE. Either download them directly with the provided links and import them ("Sketch"->"Add .ZIP Library") or search them in the Arduino IDE Library Manager ("Tools"->"Library Manager"). It is recommended to keep the libraries up to date!
 
 - [Adafruit GFX Library](https://github.com/adafruit/Adafruit-GFX-Library)
 - [Adafruit TFT-LCD Library](https://github.com/adafruit/TFTLCD-Library)
 - [Adafruit Touchscreen Library](https://github.com/adafruit/Adafruit_TouchScreen)
 - [MCUFRIEND_kbv Library](https://github.com/prenticedavid/MCUFRIEND_kbv)
-
 
 ## About Cerea
 
