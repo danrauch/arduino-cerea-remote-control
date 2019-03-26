@@ -4,15 +4,17 @@
 [![Latest Release](https://img.shields.io/github/release/danrauch/arduino-cerea-remote-control/all.svg)](https://github.com/danrauch/arduino-cerea-remote-control/releases/latest)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/danrauch)
 
+Language: [**EN**](README.md) | [DE](README_DE.md)
+
 Control and evaluate serial-exposed **Cerea** features comfortably with an Arduino based touchscreen remote control. To see it in action have a look [here](https://www.youtube.com/watch?v=ZrCHwqn8U7Y) (German)!
 
 **Currently supported features**
 
 - Setting MARC, A, B, right, left, AUTO via touchscreen (command: @CEREA)
-- Reading @SDOSE command to control a relay (RELAY_PIN_1/2; default: pins 49/53) depending on first boom box section and GPS speed. Can be enabled/disabled via touchscreen (enabled when "Aktiv" and "Streu" are active).
+- Reading @SDOSE command to control a relay (RELAY_PIN_1/2; default: pins 49/53) depending on first boom box section and GPS speed. Can be enabled/disabled via touchscreen (enabled when "Aktiv" and "Streu" buttons are active).
 - Control relays also manually via touchscreen ("Streu" button).
 - Reading @STATUSAM if availabe to sync UI
-- Vibrate on touch; output on adjustable pin (VIBRATION_MOTOR_PIN; default: built-in LED pin of board, which is pin 13 on the MEGA) and with adjustable vibration time (VIBRATION_TIME_MS, default: 200 ms)
+- Vibrate on touch; output on adjustable pin (VIBRATION_MOTOR_PIN; default: built-in LED pin of board, which is pin 13 on the MEGA) and with adjustable vibration time (VIBRATION_TIME_MS; default: 200 ms)
 
 **Necessary Hardware**
 
@@ -45,7 +47,7 @@ General information:
 
 - "1" represents on/true
 - "0" represents off/false
-- every command is followed by a CR-LF (`\r\n`).
+- every command is followed by a CR-LF (`\r\n`)
 
 ### **Cerea > Remote**
 
@@ -71,4 +73,4 @@ Commands seem to arrive in 0.5 second cycles (confirmation needed).
 
 ## Donation
 
-If this project / information helps you, you can fund a ["Maß"](https://bar.wikipedia.org/wiki/Bia) beer for me [**here**](https://paypal.me/danrauch) :)
+If this project / information helps you, you can support me by attributing to a ["Maß"](https://bar.wikipedia.org/wiki/Bia) beer for me [**here**](https://paypal.me/danrauch) :)
