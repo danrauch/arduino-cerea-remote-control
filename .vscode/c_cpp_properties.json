@@ -6,7 +6,8 @@
                 "${workspaceRoot}",
                 "C:/Program Files (x86)/Arduino/tools/**",
                 "C:/Program Files (x86)/Arduino/libraries/**",
-                "C:/Program Files (x86)/Arduino/hardware/arduino/avr/**"
+                "C:/Program Files (x86)/Arduino/hardware/arduino/avr/**",
+                "C:/Users/dan/Documents/Arduino/libraries/**"
             ],
             "defines": ["ARDUINO=189", "UBRRH", "__AVR_ATmega2560__"],
             "forcedInclude": [
