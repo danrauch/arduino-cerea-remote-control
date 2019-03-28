@@ -56,6 +56,10 @@
 #define RELAY_PIN_1 53
 #define RELAY_PIN_2 49
 
+// Cerea settings
+#define MIN_GPS_SPEED 2.5
+#define MAX_NR_BOOM_SECTIONS 10
+
 // Assign human-readable names to some common 16-bit color values:
 #define BLACK 0x0000
 #define BLUE 0x001F
@@ -67,16 +71,23 @@
 #define WHITE 0xFFFF
 #define ORANGE 0xFD20
 #define NAVY 0x000F
+#define GRAY 0xDEFB
 
 // UI details
 #define BUTTON_COUNT 8
-#define BUTTON_X 1
-#define BUTTON_Y 10
+#define BUTTON_X 2
+#define BUTTON_Y 45
 #define BUTTON_W 150
-#define BUTTON_H 90
-#define BUTTON_SPACING_X 19
-#define BUTTON_SPACING_Y 34
-#define BUTTON_TEXTSIZE 4
+#define BUTTON_H 80
+#define BUTTON_SPACING_X 17
+#define BUTTON_SPACING_Y 14
+#define BUTTON_TEXTSIZE 3
+
+#define NAV_BUTTON_X 110
+#define NAV_BUTTON_Y 420
+#define NAV_BUTTON_W 100
+#define NAV_BUTTON_H 55
+#define NAV_BUTTON_TEXTSIZE 2
 
 #define BUTTON_A 0
 #define BUTTON_B 1
@@ -86,6 +97,15 @@
 #define BUTTON_RELAY_MANUAL 5
 #define BUTTON_MARC 6
 #define BUTTON_CEREA_AUTO 7
+
+#define SECTION_RECT_SIZE 19
+#define SECTION_RECT_X 7
+#define SECTION_RECT_SPACING_X 32
+#define SECTION_RECT_Y 6
+
+#define SEPERATOR_LINE_START_X 1
+#define SEPERATOR_LINE_END_X 329
+#define SEPERATOR_LINE_Y 32
 
 // Touchscreen calibration (values might vary for different touchscreens)
 /*
@@ -126,23 +146,22 @@
 
 #define TS_MINX 95
 #define TS_MAXX 950
-
 #define TS_MINY 150
 #define TS_MAXY 890
-
 #define MIN_PRESSURE 5
 #define MAX_PRESSURE 1000
-
-#define MIN_GPS_SPEED 2.5
 
 // ### Global variables ###
 
 MCUFRIEND_kbv tft;
 TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 
-Adafruit_GFX_Button buttons[BUTTON_COUNT];
-char buttonlabels[BUTTON_COUNT][7] = {"A", "B", "links", "rechts", "Aktiv", "Streue", "MARK", "AUTO"};
-uint16_t buttoncolors[BUTTON_COUNT] = {NAVY, NAVY, ORANGE, ORANGE, RED, MAGENTA, BLUE, GREEN};
+Adafruit_GFX_Button control_buttons[BUTTON_COUNT];
+Adafruit_GFX_Button navigation_button;
+
+char button_labels[BUTTON_COUNT][8] = {"A", "B", "links", "rechts", "Aktiv", "Streuen", "MARK", "AUTO"};
+char nav_button_label[2] = ">";
+uint16_t button_colors[BUTTON_COUNT] = {NAVY, NAVY, ORANGE, ORANGE, RED, MAGENTA, BLUE, GREEN};
 
 // commands struct
 struct {
@@ -162,6 +181,14 @@ struct {
     bool manual_override;
 } relay_control;
 
+typedef enum boom_state {    
+    BOOM_INACTIVE,
+    BOOM_ACTIVE,
+    BOOM_UNUSED
+} boom_state_t;
+
+boom_state_t boom_section_states[MAX_NR_BOOM_SECTIONS] = {BOOM_UNUSED};
+
 // output command string
 char cerea_command_out[33] = {0};
 // Cerea input command buffer
@@ -172,6 +199,20 @@ unsigned long start_time_ms = 0;
 void setup(void)
 {
     Serial.begin(9600);
+
+    for (uint8_t i = 0; i < MAX_NR_BOOM_SECTIONS; i++) {
+        tft.fillRect(SECTION_RECT_X + SECTION_RECT_SPACING_X * i, SECTION_RECT_Y,
+                     SECTION_RECT_SIZE, SECTION_RECT_SIZE, GRAY);
+    }
+
+    tft.drawLine(SEPERATOR_LINE_START_X, SEPERATOR_LINE_Y,
+                 SEPERATOR_LINE_END_X, SEPERATOR_LINE_Y, WHITE);  
+    
+    navigation_button.initButtonUL(&tft, NAV_BUTTON_X, NAV_BUTTON_Y,
+                                         NAV_BUTTON_W, NAV_BUTTON_H, WHITE,
+                                         BLACK, WHITE, nav_button_label,
+                                         NAV_BUTTON_TEXTSIZE);
+    navigation_button.drawButton();
 
     init_remote_control();
 
@@ -209,16 +250,16 @@ void init_remote_control()
     tft.setRotation(2);
     tft.fillScreen(BLACK);
 
-    // create buttons
+    // create control buttons
     for (uint8_t row = 0; row < BUTTON_COUNT / 2; row++) {
         for (uint8_t col = 0; col < BUTTON_COUNT / 4; col++) {
-            buttons[col + row * 2].initButtonUL(&tft, BUTTON_X + col * (BUTTON_W + BUTTON_SPACING_X),
+            control_buttons[col + row * 2].initButtonUL(&tft, BUTTON_X + col * (BUTTON_W + BUTTON_SPACING_X),
                                                 BUTTON_Y + row * (BUTTON_H + BUTTON_SPACING_Y),
                                                 BUTTON_W, BUTTON_H,
                                                 YELLOW, // outline
-                                                buttoncolors[col + row * 2], WHITE, buttonlabels[col + row * 2],
+                                                button_colors[col + row * 2], WHITE, button_labels[col + row * 2],
                                                 BUTTON_TEXTSIZE); // text
-            buttons[col + row * 2].drawButton();
+            control_buttons[col + row * 2].drawButton();            
         }
     }
 }
@@ -253,20 +294,20 @@ void loop(void)
     }
 
     for (uint8_t b = 0; b < BUTTON_COUNT; b++) {
-        if (buttons[b].contains(lcd_point.x, lcd_point.y)) {
-            buttons[b].press(true); // tell the button it is pressed
+        if (control_buttons[b].contains(lcd_point.x, lcd_point.y)) {
+            control_buttons[b].press(true); // tell the button it is pressed
         } else {
-            buttons[b].press(false); // tell the button it is NOT pressed
+            control_buttons[b].press(false); // tell the button it is NOT pressed
         }
     }
 
     for (uint8_t b = 0; b < BUTTON_COUNT; b++) {
-        if (buttons[b].justPressed()) {
+        if (control_buttons[b].justPressed()) {
             // activate the vibration pin if a button is pressed
             digitalWrite(VIBRATION_MOTOR_PIN, HIGH);
             start_time_ms = millis();
             if (b < 4) {
-                buttons[b].drawButton(true);
+                control_buttons[b].drawButton(true);
             }
 
             // possible CEREA commands:
@@ -281,22 +322,22 @@ void loop(void)
                 case BUTTON_RIGHT: cerea_commands.right = true; break;
                 case BUTTON_RELAY_AUTO:
                     relay_control.automatic = !relay_control.automatic;
-                    buttons[BUTTON_RELAY_AUTO].drawButton(relay_control.automatic);
+                    control_buttons[BUTTON_RELAY_AUTO].drawButton(relay_control.automatic);
                     break;
                 case BUTTON_RELAY_MANUAL:
                     relay_control.manual_override = !relay_control.manual_override;
-                    buttons[BUTTON_RELAY_MANUAL].drawButton(relay_control.manual_override);
+                    control_buttons[BUTTON_RELAY_MANUAL].drawButton(relay_control.manual_override);
                     cerea_commands.marc = relay_control.manual_override;
-                    buttons[BUTTON_MARC].drawButton(relay_control.manual_override);
+                    control_buttons[BUTTON_MARC].drawButton(relay_control.manual_override);
                     control_relays(relay_control.manual_override);
                     break;
                 case BUTTON_MARC:
                     cerea_commands.marc = !cerea_commands.marc;
-                    buttons[BUTTON_MARC].drawButton(cerea_commands.marc);
+                    control_buttons[BUTTON_MARC].drawButton(cerea_commands.marc);
                     break;
                 case BUTTON_CEREA_AUTO:
                     cerea_commands.auto_on = !cerea_commands.auto_on;
-                    buttons[BUTTON_CEREA_AUTO].drawButton(cerea_commands.auto_on);
+                    control_buttons[BUTTON_CEREA_AUTO].drawButton(cerea_commands.auto_on);
                     break;
                 default: break;
             }
@@ -313,14 +354,14 @@ void loop(void)
                 Serial.println(cerea_command_out);
             }
 
-            // reset non-toggle buttons
+            // reset non-toggle control_buttons
             cerea_commands.A = false;  
             cerea_commands.B = false;
             cerea_commands.left = false;
             cerea_commands.right = false;
         }
-        if (buttons[b].justReleased() && b < 4) {
-            buttons[b].drawButton();
+        if (control_buttons[b].justReleased() && b < 4) {
+            control_buttons[b].drawButton();
         }
     }
 
@@ -364,20 +405,14 @@ void evaluate_status_string ()
     bool marc = cerea_command_in.substring(2, 3).toInt();
 
     cerea_commands.auto_on = automatic;
-    buttons[BUTTON_CEREA_AUTO].drawButton(automatic);
+    control_buttons[BUTTON_CEREA_AUTO].drawButton(automatic);
 
     cerea_commands.marc = marc;
-    buttons[BUTTON_MARC].drawButton(marc);
+    control_buttons[BUTTON_MARC].drawButton(marc);
 }
 
 void evaluate_cerea_string()
 {
-    // no automatic if manual override is false
-    if (!relay_control.manual_override || 
-        !relay_control.automatic) {
-        return;
-    }
-
     // remove @Cerea; and search for ;
     cerea_command_in.remove(0, 7);
     int first_semicolon = cerea_command_in.indexOf(';');
@@ -400,19 +435,40 @@ void evaluate_cerea_string()
         return;
     }
 
-    // extract partial field 1
+    // extract boom sections and save states
     String boom_sections = cerea_command_in.substring(0, command_end);
-    int boom_section_1 = boom_sections.substring(0, 1).toInt();
 
-    // activate partial field if vehicle is moving & auto is active 
-    bool enable_relay_marc = gps_speed >= MIN_GPS_SPEED &&
-                             boom_section_1 == 1;
+    for (int i = 0; i < MAX_NR_BOOM_SECTIONS; i++) {
+        uint16_t color = GRAY;
+        boom_state_t boom_section_state = BOOM_UNUSED;
+        if (i < number_boom_sections) {
+            // result is either 0 or 1 => BOOM_INACTIVE or BOOM_ACTIVE
+            boom_section_state = static_cast<boom_state_t>(boom_sections.substring(i*2, i*2 + 1).toInt());
+            color = boom_section_states[i] ? GREEN : RED;
+        }
+        // only update state and UI if a state changes
+        if (boom_section_states[i] != boom_section_state) {
+            boom_section_states[i] = boom_section_state;
+            tft.fillRect(SECTION_RECT_X + SECTION_RECT_SPACING_X * i, SECTION_RECT_Y,
+                         SECTION_RECT_SIZE, SECTION_RECT_SIZE, color);
+        }        
+    }
+    
+    // no automatic if manual override is false
+    if (!relay_control.manual_override || 
+        !relay_control.automatic) {
+        return;
+    }
 
-    control_relays(enable_relay_marc);
+    // control boom section 1 if vehicle is moving & auto is active 
+    bool enable_relays = gps_speed >= MIN_GPS_SPEED &&
+                         boom_section_states[0] == BOOM_ACTIVE;
+
+    control_relays(enable_relays);
 }
 
 void control_relays(bool enable)
-{
+{    
     if (enable) {
         digitalWrite(RELAY_PIN_1, HIGH);
         digitalWrite(RELAY_PIN_2, HIGH);
