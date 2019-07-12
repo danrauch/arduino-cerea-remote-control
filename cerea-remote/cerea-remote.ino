@@ -82,8 +82,8 @@
 #define BUTTON_B 1
 #define BUTTON_LEFT 2
 #define BUTTON_RIGHT 3
-#define BUTTON_RELAY_AUTO 4
-#define BUTTON_RELAY_MANUAL 5
+#define BUTTON_TURN_LEFT 4
+#define BUTTON_TURN_RIGHT 5
 #define BUTTON_MARC 6
 #define BUTTON_CEREA_AUTO 7
 
@@ -141,8 +141,8 @@ MCUFRIEND_kbv tft;
 TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 
 Adafruit_GFX_Button buttons[BUTTON_COUNT];
-char buttonlabels[BUTTON_COUNT][7] = {"A", "B", "links", "rechts", "Aktiv", "Streue", "MARK", "AUTO"};
-uint16_t buttoncolors[BUTTON_COUNT] = {NAVY, NAVY, ORANGE, ORANGE, RED, MAGENTA, BLUE, GREEN};
+char buttonlabels[BUTTON_COUNT][7] = {"A", "B", "links", "rechts", "<wende", "wende>", "MARK", "AUTO"};
+uint16_t buttoncolors[BUTTON_COUNT] = {NAVY, NAVY, ORANGE, ORANGE, MAGENTA, MAGENTA, BLUE, GREEN};
 
 // commands struct
 struct {
@@ -279,17 +279,8 @@ void loop(void)
                 case BUTTON_B: cerea_commands.B = true; break;
                 case BUTTON_LEFT: cerea_commands.left = true; break;
                 case BUTTON_RIGHT: cerea_commands.right = true; break;
-                case BUTTON_RELAY_AUTO:
-                    relay_control.automatic = !relay_control.automatic;
-                    buttons[BUTTON_RELAY_AUTO].drawButton(relay_control.automatic);
-                    break;
-                case BUTTON_RELAY_MANUAL:
-                    relay_control.manual_override = !relay_control.manual_override;
-                    buttons[BUTTON_RELAY_MANUAL].drawButton(relay_control.manual_override);
-                    cerea_commands.marc = relay_control.manual_override;
-                    buttons[BUTTON_MARC].drawButton(relay_control.manual_override);
-                    control_relays(relay_control.manual_override);
-                    break;
+                case BUTTON_TURN_LEFT: cerea_commands.turn_left = true; break;
+                case BUTTON_TURN_RIGHT: cerea_commands.turn_right = true; break;
                 case BUTTON_MARC:
                     cerea_commands.marc = !cerea_commands.marc;
                     buttons[BUTTON_MARC].drawButton(cerea_commands.marc);
@@ -304,12 +295,14 @@ void loop(void)
             // no command to CEREA is necessary if button relay auto is pressed
             if (b != BUTTON_RELAY_AUTO) {
                 // build and send command string (boolean implicitely casted to decimal 0/1)
-                sprintf(cerea_command_out, "@SDOSE;%d;0;0;0;%d;%d;%d;%d;%d;0;0;END", cerea_commands.marc,
+                sprintf(cerea_command_out, "@SDOSE;%d;0;0;0;%d;%d;%d;%d;%d;%d;%d;END", cerea_commands.marc,
                                                                                      cerea_commands.A, 
                                                                                      cerea_commands.B,
                                                                                      cerea_commands.auto_on,
                                                                                      cerea_commands.left,
-                                                                                     cerea_commands.right);
+                                                                                     cerea_commands.right,
+                                                                                     cerea_commands.turn_left,
+                                                                                     cerea_commands.turn_right);
                 Serial.println(cerea_command_out);
             }
 
@@ -318,6 +311,8 @@ void loop(void)
             cerea_commands.B = false;
             cerea_commands.left = false;
             cerea_commands.right = false;
+            cerea_commands.turn_left = false;
+            cerea_commands.turn_right = false;
         }
         if (buttons[b].justReleased() && b < 4) {
             buttons[b].drawButton();
