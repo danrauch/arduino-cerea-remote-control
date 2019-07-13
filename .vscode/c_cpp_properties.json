@@ -7,10 +7,17 @@
                 "C:/Program Files (x86)/Arduino/tools/**",
                 "C:/Program Files (x86)/Arduino/libraries/**",
                 "C:/Program Files (x86)/Arduino/hardware/arduino/avr/**",
-                "C:/Users/dan/Documents/Arduino/libraries/**"
+                "C:/Users/${env:USERNAME}/Documents/Arduino/libraries/**",
+                "C:/Program Files (x86)/Arduino/hardware/arduino/avr/**",
+                "C:/Program Files (x86)/Arduino/tools/**"
             ],
-            "defines": ["ARDUINO=189", "UBRRH", "__AVR_ATmega2560__"],
+            "defines": [
+                "ARDUINO=189",
+                "UBRRH",
+                "__AVR_ATmega2560__"
+            ],
             "forcedInclude": [
+                "C:/Program Files (x86)/Arduino/hardware/arduino/avr/cores/arduino/Arduino.h",
                 "C:/Program Files (x86)/Arduino/hardware/arduino/avr/cores/arduino/Arduino.h"
             ],
             "intelliSenseMode": "gcc-x64",

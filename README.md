@@ -32,7 +32,7 @@ Riku from the German [Cerea forum](http://cerea-forum.de/) built an excellent ho
 
 To use this sketch the following libraries must be downloaded and imported to the Arduino IDE. Either download them directly with the provided links and import them ("Sketch"->"Add .ZIP Library") or search them in the Arduino IDE Library Manager ("Tools"->"Library Manager"). It is recommended to keep the libraries up to date!
 
-- [Adafruit GFX Library](https://github.com/adafruit/Adafruit-GFX-Library)
+- [Adafruit GFX Library](https://github.com/adafruit/Adafruit-GFX-Library) <-- *important: use version 1.5.3*
 - [Adafruit TFT-LCD Library](https://github.com/adafruit/TFTLCD-Library)
 - [Adafruit Touchscreen Library](https://github.com/adafruit/Adafruit_TouchScreen)
 - [MCUFRIEND_kbv Library](https://github.com/prenticedavid/MCUFRIEND_kbv)
