@@ -292,19 +292,16 @@ void loop(void)
                 default: break;
             }
 
-            // no command to CEREA is necessary if button relay auto is pressed
-            if (b != BUTTON_RELAY_AUTO) {
-                // build and send command string (boolean implicitely casted to decimal 0/1)
-                sprintf(cerea_command_out, "@SDOSE;%d;0;0;0;%d;%d;%d;%d;%d;%d;%d;END", cerea_commands.marc,
-                                                                                     cerea_commands.A, 
-                                                                                     cerea_commands.B,
-                                                                                     cerea_commands.auto_on,
-                                                                                     cerea_commands.left,
-                                                                                     cerea_commands.right,
-                                                                                     cerea_commands.turn_left,
-                                                                                     cerea_commands.turn_right);
-                Serial.println(cerea_command_out);
-            }
+            // build and send command string (boolean implicitely casted to decimal 0/1)
+            sprintf(cerea_command_out, "@SDOSE;%d;0;0;0;%d;%d;%d;%d;%d;%d;%d;END", cerea_commands.marc,
+                                                                                 cerea_commands.A, 
+                                                                                 cerea_commands.B,
+                                                                                 cerea_commands.auto_on,
+                                                                                 cerea_commands.left,
+                                                                                 cerea_commands.right,
+                                                                                 cerea_commands.turn_left,
+                                                                                 cerea_commands.turn_right);
+            Serial.println(cerea_command_out);
 
             // reset non-toggle buttons
             cerea_commands.A = false;  
