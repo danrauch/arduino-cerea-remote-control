@@ -265,7 +265,7 @@ void loop(void)
             // activate the vibration pin if a button is pressed
             digitalWrite(VIBRATION_MOTOR_PIN, HIGH);
             start_time_ms = millis();
-            if (b < 4) {
+            if (b < 6) {
                 buttons[b].drawButton(true);
             }
 
@@ -311,7 +311,7 @@ void loop(void)
             cerea_commands.turn_left = false;
             cerea_commands.turn_right = false;
         }
-        if (buttons[b].justReleased() && b < 4) {
+        if (buttons[b].justReleased() && b < 6) {
             buttons[b].drawButton();
         }
     }
