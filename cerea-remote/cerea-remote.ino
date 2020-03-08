@@ -288,7 +288,7 @@ void loop(void)
                     buttons[BUTTON_RELAY_MANUAL].drawButton(relay_control.manual_override);
                     cerea_commands.marc = relay_control.manual_override;
                     buttons[BUTTON_MARC].drawButton(relay_control.manual_override);
-                    control_relays(relay_control.manual_override);
+                    control_relays(relay_control.manual_override, true);
                     break;
                 case BUTTON_MARC:
                     cerea_commands.marc = !cerea_commands.marc;
@@ -408,16 +408,24 @@ void evaluate_cerea_string()
     bool enable_relay_marc = gps_speed >= MIN_GPS_SPEED &&
                              boom_section_1 == 1;
 
-    control_relays(enable_relay_marc);
+    control_relays(enable_relay_marc, false);
 }
 
-void control_relays(bool enable)
+void control_relays(bool enable, bool manual_mode)
 {
-    if (enable) {
+    if (manual_mode) {
         digitalWrite(RELAY_PIN_1, HIGH);
         digitalWrite(RELAY_PIN_2, HIGH);
-    } else {
+        delay(400);
         digitalWrite(RELAY_PIN_1, LOW);
-        digitalWrite(RELAY_PIN_2, LOW);
+        digitalWrite(RELAY_PIN_2, LOW);        
+    } else {
+        if (enable) {
+            digitalWrite(RELAY_PIN_1, HIGH);
+            digitalWrite(RELAY_PIN_2, HIGH);
+        } else {
+            digitalWrite(RELAY_PIN_1, LOW);
+            digitalWrite(RELAY_PIN_2, LOW);
+        }
     }
 }
