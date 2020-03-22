@@ -30,7 +30,7 @@ Mit dieser Arduino-basierten Touchscreen-Fernbedienung kann man **Cerea**-Funkti
 
 *Wichtig bei USB-basierter seriellen Kommunikation:* Standardmäßig setzt sich der Arduino bei der Initialisierung der seriellen Kommunikation komplett zurück. Im Falle der Cerea-Kommunikation denkt der Arduino aus irgendeinem Grund er wird neu geflasht und friert dadurch ein. Um diesen Auto-Reset zu Verhindern muss ein Kondensator zwischen dem "Reset" und dem "GND" Pin angeschlossen werden.
 
-Riku vom deutschen [Cerea forum](http://cerea-forum.de/) hat ein ausgezeichnetes Gehäuse für den Arduino konstruiert und die Daten netterweise zur Verfügung gestellt. Die Basisanleitung kann man [hier](https://cerea-forum.de/forum/index.php?thread/440-externe-touchscreen-bedieneinheit-bauanleitung/) finden und die Erweiterung [hier](https://cerea-forum.de/forum/index.php?thread/493-externe-touchscreen-bedieneinheit-automatisierte-schaltung/).
+Riku vom deutschen [Cerea forum](http://cerea-forum.de/) hat ein ausgezeichnetes Gehäuse für den Arduino konstruiert und die Daten netterweise zur Verfügung gestellt. Die Basisanleitung kann man [hier](https://cerea-forum.de/forum/index.php?thread/440-externe-touchscreen-bedieneinheit-bauanleitung/) finden und die Erweiterung [hier](https://cerea-forum.de/forum/index.php?thread/493-externe-touchscreen-bedieneinheit-automatisierte-schaltung/). **WICHTIG: Dieses Gehäuse passt nur mit Release vor 0.2.2 zusammen, da es die neu eingeführten Teilbreitenstatus-Indikatoren nicht berücksichtigt. Bitte verwenden Sie [Release 0.2.1](https://github.com/danrauch/arduino-cerea-remote-control/releases/tag/v0.2.1) falls Sie planen das beschriebene Gehäuse nachzubauen.**
 
 **Abhängigkeiten**
 
