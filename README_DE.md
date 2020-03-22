@@ -14,7 +14,11 @@ Mit dieser Arduino-basierten Touchscreen-Fernbedienung kann man **Cerea**-Funkti
 - Zurücklesen des @SDOSE-Kommandos um, abhängig von der ersten Teilbreite und der GPS-Geschwindigkeit ein Relais zu steuern (RELAY_PIN_1/2; Standard: Pins 49/53). Kann über den Touchscreen aktiviert bzw. deaktiviert werden (Aktiv wenn "Aktiv" und "Streu" Tasten gesetzt sind).
 - Steuert Relais auch manuell über Touchscreen ("Streu" Taste).
 - Zurücklesen von @STATUSAM, falls verfügbar, um GUI synchron zu halten
+- Anzeigen der aktuellen Teilbreitenstatus (Vierecke oben im Display: grau = nicht genutzt, rot = nicht aktiv, grün = aktiv)
+- BETA: Steuern der einzelnen Teilbreiten (1-10) mit dem @BOOMBOX Kommando (Seite 2: 1 - 10; durch Wechsel der Seite könnten Statusnachrichten von Cerea versäumt werden, d.h. das GUI ist für einige Momente nicht synchronisiert mit Cerea) 
 - Vibrationsfeedback bei Touchscreenbetätigung; Signal kann auf frei wählbaren Digitalpin gelegt werden (VIBRATION_MOTOR_PIN; Standard: eingebaute LED-Pin des Boards, welcher auf dem MEGA Pin 13 entspricht) und die Vibrationsdauer ist einstellbar (VIBRATION_TIME_MS; Standard: 200 ms)
+
+    ![Seite 1](/doc/resources/cerea-remote-page1.jpg "Seite 1") ![Seite 2](/doc/resources/cerea-remote-page2.jpg "Seite 2")
 
 **Nötige Hardware**
 

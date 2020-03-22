@@ -79,6 +79,7 @@
 #define BUTTON_Y 45
 #define BUTTON_W 150
 #define BUTTON_H 80
+#define BOOM_BUTTON_H 60
 #define BUTTON_SPACING_X 17
 #define BUTTON_SPACING_Y 14
 #define BUTTON_TEXTSIZE 3
@@ -150,6 +151,7 @@
 #define TS_MAXY 890
 #define MIN_PRESSURE 5
 #define MAX_PRESSURE 1000
+#define MAX_CHARS_CMD_STRING 33
 
 // ### Global variables ###
 
@@ -157,10 +159,13 @@ MCUFRIEND_kbv tft;
 TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 
 Adafruit_GFX_Button control_buttons[BUTTON_COUNT];
-Adafruit_GFX_Button navigation_button;
+Adafruit_GFX_Button boom_section_buttons[MAX_NR_BOOM_SECTIONS];
+Adafruit_GFX_Button navigation_button_p1, navigation_button_p2;
 
 char button_labels[BUTTON_COUNT][8] = {"A", "B", "links", "rechts", "Aktiv", "Streuen", "MARK", "AUTO"};
-char nav_button_label[2] = ">";
+char boom_button_labels[MAX_NR_BOOM_SECTIONS][3] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"};
+char nav_button_label_p1[2] = ">";
+char nav_button_label_p2[2] = "<";
 uint16_t button_colors[BUTTON_COUNT] = {NAVY, NAVY, ORANGE, ORANGE, RED, MAGENTA, BLUE, GREEN};
 
 // commands struct
@@ -182,40 +187,33 @@ struct {
 } relay_control;
 
 typedef enum boom_state {    
+    BOOM_UNUSED,
     BOOM_INACTIVE,
-    BOOM_ACTIVE,
-    BOOM_UNUSED
+    BOOM_ACTIVE
 } boom_state_t;
 
-boom_state_t boom_section_states[MAX_NR_BOOM_SECTIONS] = {BOOM_UNUSED};
+boom_state_t boom_section_states[MAX_NR_BOOM_SECTIONS];
+bool boom_section_active[MAX_NR_BOOM_SECTIONS];
 
 // output command string
-char cerea_command_out[33] = {0};
+char cerea_command_out[MAX_CHARS_CMD_STRING];
 // Cerea input command buffer
 String cerea_command_in = "";
 
 unsigned long start_time_ms = 0;
+unsigned long last_gui_update_ms = 0;
+int current_page = 1;
 
 void setup(void)
 {
+    memset(&cerea_commands, 0, sizeof(cerea_commands));
+    memset(&relay_control, 0, sizeof(relay_control));
+    memset(cerea_command_out, 0, sizeof(char) * MAX_CHARS_CMD_STRING);
+    memset(boom_section_active, 0, sizeof(bool) * MAX_CHARS_CMD_STRING);
+  
+    init_remote_control_gui();
     Serial.begin(9600);
-
-    for (uint8_t i = 0; i < MAX_NR_BOOM_SECTIONS; i++) {
-        tft.fillRect(SECTION_RECT_X + SECTION_RECT_SPACING_X * i, SECTION_RECT_Y,
-                     SECTION_RECT_SIZE, SECTION_RECT_SIZE, GRAY);
-    }
-
-    tft.drawLine(SEPERATOR_LINE_START_X, SEPERATOR_LINE_Y,
-                 SEPERATOR_LINE_END_X, SEPERATOR_LINE_Y, WHITE);  
     
-    navigation_button.initButtonUL(&tft, NAV_BUTTON_X, NAV_BUTTON_Y,
-                                         NAV_BUTTON_W, NAV_BUTTON_H, WHITE,
-                                         BLACK, WHITE, nav_button_label,
-                                         NAV_BUTTON_TEXTSIZE);
-    navigation_button.drawButton();
-
-    init_remote_control();
-
     // init pins
     pinMode(VIBRATION_MOTOR_PIN, OUTPUT); 
     digitalWrite(VIBRATION_MOTOR_PIN, LOW);
@@ -225,11 +223,60 @@ void setup(void)
     digitalWrite(RELAY_PIN_2, LOW);
 }
 
-void init_remote_control()
+void draw_header()
 {
-    memset(&cerea_commands, 0, sizeof(cerea_commands));
-    memset(&relay_control, 0, sizeof(relay_control));
-    
+
+    for (uint8_t i = 0; i < MAX_NR_BOOM_SECTIONS; i++) {        
+        uint16_t color = boom_section_states[i] == BOOM_UNUSED ? GRAY : 
+                                                                 boom_section_states[i] == BOOM_INACTIVE ? RED : 
+                                                                                                           GREEN;
+        tft.fillRect(SECTION_RECT_X + SECTION_RECT_SPACING_X * i, SECTION_RECT_Y,
+                     SECTION_RECT_SIZE, SECTION_RECT_SIZE, color);
+    }
+
+    tft.drawLine(SEPERATOR_LINE_START_X, SEPERATOR_LINE_Y,
+                 SEPERATOR_LINE_END_X, SEPERATOR_LINE_Y, WHITE);  
+}
+
+void draw_page1()
+{    
+    tft.fillScreen(BLACK);
+    tft.setRotation(2);
+    draw_header();
+
+        // create control buttons
+    for (uint8_t row = 0; row < BUTTON_COUNT / 4; row++) {
+        for (uint8_t col = 0; col < BUTTON_COUNT / 4; col++) {
+            control_buttons[col + row * 2].drawButton();            
+        }
+    }
+    control_buttons[BUTTON_RELAY_AUTO].drawButton(relay_control.automatic);
+    control_buttons[BUTTON_RELAY_MANUAL].drawButton(relay_control.manual_override);
+    control_buttons[BUTTON_MARC].drawButton(cerea_commands.marc);
+    control_buttons[BUTTON_CEREA_AUTO].drawButton(cerea_commands.auto_on);
+    navigation_button_p1.drawButton();
+
+    current_page = 1;
+}
+
+void draw_page2()
+{    
+    tft.fillScreen(BLACK);
+    tft.setRotation(2);
+    draw_header();
+
+    for (uint8_t row = 0; row < MAX_NR_BOOM_SECTIONS / 2; row++) {
+        for (uint8_t col = 0; col < MAX_NR_BOOM_SECTIONS / 5; col++) {
+            boom_section_buttons[col + row * 2].drawButton();            
+        }
+    }
+    navigation_button_p2.drawButton();
+
+    current_page = 2;
+}
+
+void init_remote_control_gui()
+{    
     Serial.println(F("TFT LCD test"));
     tft.reset();
 
@@ -241,14 +288,13 @@ void init_remote_control()
         Serial.println(F("ERROR: LCD driver chip not compatible"));
     }
 
+    tft.setRotation(2);
+
     tft.begin(identifier);
     Serial.print("TFT size is ");
     Serial.print(tft.width());
     Serial.print("x");
     Serial.println(tft.height());
-
-    tft.setRotation(2);
-    tft.fillScreen(BLACK);
 
     // create control buttons
     for (uint8_t row = 0; row < BUTTON_COUNT / 2; row++) {
@@ -259,9 +305,30 @@ void init_remote_control()
                                                 YELLOW, // outline
                                                 button_colors[col + row * 2], WHITE, button_labels[col + row * 2],
                                                 BUTTON_TEXTSIZE); // text
-            control_buttons[col + row * 2].drawButton();            
         }
     }
+
+    for (uint8_t row = 0; row < MAX_NR_BOOM_SECTIONS / 2; row++) {
+        for (uint8_t col = 0; col < MAX_NR_BOOM_SECTIONS / 5; col++) {
+            boom_section_buttons[col + row * 2].initButtonUL(&tft, BUTTON_X + col * (BUTTON_W + BUTTON_SPACING_X),
+                                                BUTTON_Y + row * (BOOM_BUTTON_H + BUTTON_SPACING_Y),
+                                                BUTTON_W, BOOM_BUTTON_H,
+                                                YELLOW, // outline
+                                                NAVY, WHITE, boom_button_labels[col + row * 2],
+                                                BUTTON_TEXTSIZE); // text
+        }
+    }
+
+    navigation_button_p1.initButtonUL(&tft, NAV_BUTTON_X, NAV_BUTTON_Y,
+                                         NAV_BUTTON_W, NAV_BUTTON_H, WHITE,
+                                         BLACK, WHITE, nav_button_label_p1,
+                                         NAV_BUTTON_TEXTSIZE);
+    navigation_button_p2.initButtonUL(&tft, NAV_BUTTON_X, NAV_BUTTON_Y,
+                                         NAV_BUTTON_W, NAV_BUTTON_H, WHITE,
+                                         BLACK, WHITE, nav_button_label_p2,
+                                         NAV_BUTTON_TEXTSIZE);
+
+    draw_page1();
 }
 
 void loop(void)
@@ -293,78 +360,148 @@ void loop(void)
         lcd_point.x = map(touch_point.y, TS_MINY, TS_MAXY, 0, tft.width());
     }
 
-    for (uint8_t b = 0; b < BUTTON_COUNT; b++) {
-        if (control_buttons[b].contains(lcd_point.x, lcd_point.y)) {
-            control_buttons[b].press(true); // tell the button it is pressed
-        } else {
-            control_buttons[b].press(false); // tell the button it is NOT pressed
-        }
-    }
+    if (current_page == 1) {
 
-    for (uint8_t b = 0; b < BUTTON_COUNT; b++) {
-        if (control_buttons[b].justPressed()) {
-            // activate the vibration pin if a button is pressed
+        if (navigation_button_p1.contains(lcd_point.x, lcd_point.y)) {
+            navigation_button_p1.press(true); // tell the button it is pressed
+        } else {
+            navigation_button_p1.press(false); // tell the button it is NOT pressed
+        }
+
+        if (navigation_button_p1.justPressed()) {
             digitalWrite(VIBRATION_MOTOR_PIN, HIGH);
             start_time_ms = millis();
-            if (b < 4) {
-                control_buttons[b].drawButton(true);
+            navigation_button_p1.drawButton(true);
+            draw_page2();
+            goto finish_touch_handling;
+        }
+        
+        for (uint8_t b = 0; b < BUTTON_COUNT; b++) {
+            if (control_buttons[b].contains(lcd_point.x, lcd_point.y)) {
+                control_buttons[b].press(true); // tell the button it is pressed
+            } else {
+                control_buttons[b].press(false); // tell the button it is NOT pressed
             }
+        }
 
-            // possible CEREA commands:
-            // marc, contour, New, none, A, B, auto, left, right, turn left, turn right
-            // e.g. activate marc:
-            // Serial.println ("@SDOSE;1;0;0;0;0;0;0;0;0;0;0;END");
+        for (uint8_t b = 0; b < BUTTON_COUNT; b++) {
+            if (control_buttons[b].justPressed()) {
+                // activate the vibration pin if a button is pressed
+                digitalWrite(VIBRATION_MOTOR_PIN, HIGH);
+                start_time_ms = millis();
+                if (b < 4) {
+                    control_buttons[b].drawButton(true);
+                }
 
-            switch (b) {
-                case BUTTON_A: cerea_commands.A = true; break;
-                case BUTTON_B: cerea_commands.B = true; break;
-                case BUTTON_LEFT: cerea_commands.left = true; break;
-                case BUTTON_RIGHT: cerea_commands.right = true; break;
-                case BUTTON_RELAY_AUTO:
-                    relay_control.automatic = !relay_control.automatic;
-                    control_buttons[BUTTON_RELAY_AUTO].drawButton(relay_control.automatic);
-                    break;
-                case BUTTON_RELAY_MANUAL:
-                    relay_control.manual_override = !relay_control.manual_override;
-                    control_buttons[BUTTON_RELAY_MANUAL].drawButton(relay_control.manual_override);
-                    cerea_commands.marc = relay_control.manual_override;
-                    control_buttons[BUTTON_MARC].drawButton(relay_control.manual_override);
-                    control_relays(relay_control.manual_override);
-                    break;
-                case BUTTON_MARC:
-                    cerea_commands.marc = !cerea_commands.marc;
-                    control_buttons[BUTTON_MARC].drawButton(cerea_commands.marc);
-                    break;
-                case BUTTON_CEREA_AUTO:
-                    cerea_commands.auto_on = !cerea_commands.auto_on;
-                    control_buttons[BUTTON_CEREA_AUTO].drawButton(cerea_commands.auto_on);
-                    break;
-                default: break;
+                // possible CEREA commands:
+                // marc, contour, New, none, A, B, auto, left, right, turn left, turn right
+                // e.g. activate marc:
+                // Serial.println ("@SDOSE;1;0;0;0;0;0;0;0;0;0;0;END");
+
+                switch (b) {
+                    case BUTTON_A: cerea_commands.A = true; break;
+                    case BUTTON_B: cerea_commands.B = true; break;
+                    case BUTTON_LEFT: cerea_commands.left = true; break;
+                    case BUTTON_RIGHT: cerea_commands.right = true; break;
+                    case BUTTON_RELAY_AUTO:
+                        relay_control.automatic = !relay_control.automatic;
+                        control_buttons[BUTTON_RELAY_AUTO].drawButton(relay_control.automatic);
+                        break;
+                    case BUTTON_RELAY_MANUAL:
+                        relay_control.manual_override = !relay_control.manual_override;
+                        control_buttons[BUTTON_RELAY_MANUAL].drawButton(relay_control.manual_override);
+                        cerea_commands.marc = relay_control.manual_override;
+                        control_buttons[BUTTON_MARC].drawButton(relay_control.manual_override);
+                        control_relays(relay_control.manual_override);
+                        break;
+                    case BUTTON_MARC:
+                        cerea_commands.marc = !cerea_commands.marc;
+                        control_buttons[BUTTON_MARC].drawButton(cerea_commands.marc);
+                        break;
+                    case BUTTON_CEREA_AUTO:
+                        cerea_commands.auto_on = !cerea_commands.auto_on;
+                        control_buttons[BUTTON_CEREA_AUTO].drawButton(cerea_commands.auto_on);
+                        break;
+                    default: break;
+                }
+
+                // no command to CEREA is necessary if button relay auto is pressed
+                if (b != BUTTON_RELAY_AUTO) {
+                    // build and send command string (boolean implicitely casted to decimal 0/1)
+                    sprintf(cerea_command_out, "@SDOSE;%d;0;0;0;%d;%d;%d;%d;%d;0;0;END", cerea_commands.marc,
+                                                                                        cerea_commands.A, 
+                                                                                        cerea_commands.B,
+                                                                                        cerea_commands.auto_on,
+                                                                                        cerea_commands.left,
+                                                                                        cerea_commands.right);
+                    Serial.println(cerea_command_out);
+                }
+
+                // reset non-toggle control_buttons
+                cerea_commands.A = false;  
+                cerea_commands.B = false;
+                cerea_commands.left = false;
+                cerea_commands.right = false;
             }
+            if (control_buttons[b].justReleased() && b < 4) {
+                control_buttons[b].drawButton();
+            }
+        }
+    } else if (current_page == 2) {
 
-            // no command to CEREA is necessary if button relay auto is pressed
-            if (b != BUTTON_RELAY_AUTO) {
+        if (navigation_button_p2.contains(lcd_point.x, lcd_point.y)) {
+            navigation_button_p2.press(true); // tell the button it is pressed
+        } else {
+            navigation_button_p2.press(false); // tell the button it is NOT pressed
+        }
+
+        if (navigation_button_p2.justPressed()) {
+            digitalWrite(VIBRATION_MOTOR_PIN, HIGH);
+            start_time_ms = millis();
+            navigation_button_p2.drawButton(true);
+            draw_page1();
+            goto finish_touch_handling;
+        }
+
+        for (uint8_t b = 0; b < MAX_NR_BOOM_SECTIONS; b++) {
+            if (boom_section_buttons[b].contains(lcd_point.x, lcd_point.y)) {
+                boom_section_buttons[b].press(true); // tell the button it is pressed
+            } else {
+                boom_section_buttons[b].press(false); // tell the button it is NOT pressed
+            }
+        }
+
+        for (uint8_t b = 0; b < MAX_NR_BOOM_SECTIONS; b++) {
+            if (boom_section_buttons[b].justPressed()) {
+                // activate the vibration pin if a button is pressed
+                digitalWrite(VIBRATION_MOTOR_PIN, HIGH);
+                start_time_ms = millis();                
+                if (boom_section_states[b] == BOOM_ACTIVE) {
+                    boom_section_states[b] == BOOM_INACTIVE;
+                    boom_section_active[b] = false;
+                } else {
+                    boom_section_states[b] == BOOM_ACTIVE;
+                    boom_section_active[b] = true;
+                }
+                boom_section_buttons[b].drawButton(true);
+
                 // build and send command string (boolean implicitely casted to decimal 0/1)
-                sprintf(cerea_command_out, "@SDOSE;%d;0;0;0;%d;%d;%d;%d;%d;0;0;END", cerea_commands.marc,
-                                                                                     cerea_commands.A, 
-                                                                                     cerea_commands.B,
-                                                                                     cerea_commands.auto_on,
-                                                                                     cerea_commands.left,
-                                                                                     cerea_commands.right);
+                sprintf(cerea_command_out, "@BOOMBOX;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;",   boom_section_active[0], boom_section_active[1],
+                                                                                        boom_section_active[2], boom_section_active[3],
+                                                                                        boom_section_active[4], boom_section_active[5],
+                                                                                        boom_section_active[6], boom_section_active[7],
+                                                                                        boom_section_active[8], boom_section_active[9]);
+
                 Serial.println(cerea_command_out);
             }
 
-            // reset non-toggle control_buttons
-            cerea_commands.A = false;  
-            cerea_commands.B = false;
-            cerea_commands.left = false;
-            cerea_commands.right = false;
-        }
-        if (control_buttons[b].justReleased() && b < 4) {
-            control_buttons[b].drawButton();
+            if (boom_section_buttons[b].justReleased()) {
+                boom_section_buttons[b].drawButton();
+            }
         }
     }
 
+finish_touch_handling:
     // debounce UI
     delay(10);
 
@@ -405,10 +542,12 @@ void evaluate_status_string ()
     bool marc = cerea_command_in.substring(2, 3).toInt();
 
     cerea_commands.auto_on = automatic;
-    control_buttons[BUTTON_CEREA_AUTO].drawButton(automatic);
-
     cerea_commands.marc = marc;
-    control_buttons[BUTTON_MARC].drawButton(marc);
+
+    if (current_page == 1) {
+        control_buttons[BUTTON_CEREA_AUTO].drawButton(automatic);
+        control_buttons[BUTTON_MARC].drawButton(marc);
+    }
 }
 
 void evaluate_cerea_string()
@@ -442,9 +581,10 @@ void evaluate_cerea_string()
         uint16_t color = GRAY;
         boom_state_t boom_section_state = BOOM_UNUSED;
         if (i < number_boom_sections) {
-            // result is either 0 or 1 => BOOM_INACTIVE or BOOM_ACTIVE
-            boom_section_state = static_cast<boom_state_t>(boom_sections.substring(i*2, i*2 + 1).toInt());
-            color = boom_section_states[i] ? GREEN : RED;
+            // result is either 0 or 1 => BOOM_INACTIVE or BOOM_ACTIVE            
+            boom_section_active[i] = boom_sections.substring(i*2, i*2 + 1).toInt();
+            boom_section_state = boom_section_active[i] ? BOOM_ACTIVE : BOOM_INACTIVE;
+            color = boom_section_active[i] ? GREEN : RED;
         }
         // only update state and UI if a state changes
         if (boom_section_states[i] != boom_section_state) {

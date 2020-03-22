@@ -5,7 +5,7 @@ import serial
 
 def cerea_simulation():
     ''' 
-    cerea_simulation() mimics the serial output behaviour of
+    cerea_simulation() mimics the serial output behavior of
     the Cerea auto-steer system. Can be used for testing and
     prototyping of e.g. Arduino controlles without the necessity
     of a working Cerea setup.
@@ -13,7 +13,7 @@ def cerea_simulation():
     The settings of the serial partner have to match.
     '''
 
-    com_port = 'COM6'
+    com_port = 'COM5'
     # com_port = '/dev/cu.usbmodemFA1301'
     send_delay = 0.5
 
@@ -24,14 +24,19 @@ def cerea_simulation():
         print(e)
         sys.exit(1)
 
+    time.sleep(2.0)  # delay to not activate flashin of Arduino
+
     print('Send commands with', send_delay, 'seconds delay')
 
     i = 0
-    command_strings =  ['@CEREA;5.0;-1;1;END',
-                        '@CEREA;5.0;-1;0;END',
-                        '@CEREA;5.0;-1;1;1;1;1;1;1;1;1;1;1;END',
-                        '@HIDRAU;1;END',
-                        '@STATUSAM;1;1;END']
+    command_strings = ['@CEREA;5.0;-1;0;END',
+                       '@CEREA;5.0;-1;1;END',
+                       '@CEREA;5.0;-1;0;END',
+                       '@CEREA;5.0;-1;1;1;1;1;1;1;1;1;1;1;END',
+                       '@CEREA;5.0;-1;0;0;0;0;0;1;1;1;1;1;END',
+                       '@CEREA;5.0;-1;0;0;0;0;0;0;0;0;0;0;END',
+                       '@HIDRAU;1;END',
+                       '@STATUSAM;1;1;END']
 
     try:
         while True:

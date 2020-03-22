@@ -13,8 +13,13 @@ Control and evaluate serial-exposed **Cerea** features comfortably with an Ardui
 - Setting MARC, A, B, right, left, AUTO via touchscreen (command: @CEREA)
 - Reading @SDOSE command to control a relay (RELAY_PIN_1/2; default: pins 49/53) depending on first boom box section and GPS speed. Can be enabled/disabled via touchscreen (enabled when "Aktiv" and "Streu" buttons are active).
 - Control relays also manually via touchscreen ("Streu" button).
-- Reading @STATUSAM if availabe to sync UI
+- Reading @STATUSAM if available to sync UI
+- Showing current boombox states (rectangles at top of display: grey = unused, red = not active, green = active)
+- BETA: Control different boomboxes (1-10) via the @BOOMBOX command  (Page 2: 1 - 10; note that page changing could lead to missed status data from Cerea, so the GUI might be not in sync with Cerea for some moments) 
 - Vibrate on touch; output on adjustable pin (VIBRATION_MOTOR_PIN; default: built-in LED pin of board, which is pin 13 on the MEGA) and with adjustable vibration time (VIBRATION_TIME_MS; default: 200 ms)
+
+
+    ![Page 1](/doc/resources/cerea-remote-page1.jpg "Page 1") ![Page 2](/doc/resources/cerea-remote-page2.jpg "Page 2")
 
 **Necessary Hardware**
 
