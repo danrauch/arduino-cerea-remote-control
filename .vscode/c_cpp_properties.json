@@ -7,9 +7,7 @@
                 "C:/Program Files (x86)/Arduino/libraries/**",
                 "C:/Users/${env:USERNAME}/Documents/Arduino/libraries/**",
                 "C:/Program Files (x86)/Arduino/hardware/arduino/avr/**",
-                "C:/Program Files (x86)/Arduino/tools/**",
-                "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\**",
-                "C:\\Program Files (x86)\\Arduino\\tools\\**"
+                "C:/Program Files (x86)/Arduino/tools/**"
             ],
             "defines": [
                 "ARDUINO=189",
@@ -17,8 +15,7 @@
                 "__AVR_ATmega2560__"
             ],
             "forcedInclude": [
-                "C:/Program Files (x86)/Arduino/hardware/arduino/avr/cores/arduino/Arduino.h",
-                "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\cores\\arduino\\Arduino.h"
+                "C:/Program Files (x86)/Arduino/hardware/arduino/avr/cores/arduino/Arduino.h"
             ],
             "intelliSenseMode": "gcc-x64",
             "compilerPath": "C:/Program Files (x86)/Arduino/hardware/tools/avr/bin/avr-gcc.exe"
